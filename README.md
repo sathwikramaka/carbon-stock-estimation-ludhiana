@@ -25,10 +25,10 @@ and an **interactive web map dashboard**.
 ## Overview
 
 This project estimates above-ground and below-ground carbon stocks across
-Ludhiana District, Punjab at 250m grid resolution (66,790 cells) using
+Ludhiana District, Punjab, at 250m grid resolution (66,790 cells) using
 Random Forest models trained on satellite-derived environmental covariates.
 
-Results are served via a Flask REST API and visualized on an interactive
+Results are served via a Flask REST API and visualised on an interactive
 Leaflet.js choropleth map with click-to-query spatial functionality.
 
 ---
