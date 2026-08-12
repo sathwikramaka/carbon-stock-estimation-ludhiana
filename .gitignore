@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+.ipynb_checkpoints/
+.env
+*.pkl
+IIRS/Carbon_Stocks/carbon_all_66790_final.csv
