@@ -1,6 +1,6 @@
 EVALUATION REPORT
 ========================================
-Random Forest NPP  R2=0.5426  RMSE=448.597  MAE=314.795
-XGBoost/GradBoost NPP  R2=0.5346  RMSE=452.490  MAE=318.675
+Random Forest NPP  R2=0.5426  RMSE=448.598  MAE=314.789
+XGBoost/GradBoost NPP  R2=0.5330  RMSE=453.274  MAE=319.171
 Random Forest SOC  R2=0.9665  RMSE=1.392  MAE=1.012
-XGBoost/GradBoost SOC  R2=0.9648  RMSE=1.428  MAE=1.058
+XGBoost/GradBoost SOC  R2=0.9650  RMSE=1.423  MAE=1.053

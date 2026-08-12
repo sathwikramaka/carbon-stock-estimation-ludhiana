@@ -1,29 +1,30 @@
 
-LUDHIANA DISTRICT — UPDATED CARBON STOCK INVENTORY (66,790 Grid Cells)
+LUDHIANA DISTRICT â€” CARBON STOCK INVENTORY (ALL GRID CELLS)
 =======================================================================
 
 GRID CELL BREAKDOWN
-  Total unique cells         : 64,545
+  Unique cells               : 64,545
   Agricultural (agri=1)      : 52,809
   Non-agricultural (agri=0)  : 11,736
   Cell area                  : 6.25 ha
-  Note: 2,155 duplicate Grid_IDs resolved (kept highest Ag/NonAg_m)
+  Note: 2,155 duplicate Grid_IDs removed from the 66,790-cell
+        export (kept the row with the highest Ag/NonAg_m per cell).
 
 PREDICTION SOURCE
-  20k cells (re-predicted)   : 16,250
-  New cells (fresh predict)  : 36,559
+  Re-predicted (in 20k set)  : 16,250
+  Fresh predictions          : 36,559
   Non-agricultural (AGC=0)   : 11,736
 
 CARBON DENSITY (mean)
-  Above-ground (agri cells)  : 6.1697 tC/ha
-  Below-ground (all cells)   : 126.1101 tC/ha
+  Above-ground (agri cells)  : 6.1683 tC/ha
+  Below-ground (all cells)   : 126.1037 tC/ha
 
-DISTRICT CARBON STOCK
+DISTRICT CARBON STOCK  <-- REPORT THESE FIGURES
   -------------------------------------------------------------------
-  Above-ground :           2,036,343.01 tC  =  2.0363 million tC  (3.85%)
-  Below-ground :          50,873,622.12 tC  =  50.8736 million tC  (96.15%)
+  Above-ground :           2,035,891.20 tC  =  2.0359 MtC  (3.85%)
+  Below-ground :          50,871,033.97 tC  =  50.8710 MtC  (96.15%)
   -------------------------------------------------------------------
-  TOTAL        :          52,909,965.13 tC  =  52.9100 million tC
+  TOTAL        :          52,906,925.17 tC  =  52.9069 MtC
 
 CO2 EQUIVALENT (x 3.667)
-  Total CO2e   : 194.0032 million tCO2e
+  Total CO2e   : 193.9921 million tCO2e
