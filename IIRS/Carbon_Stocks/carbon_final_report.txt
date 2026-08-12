@@ -1,4 +1,4 @@
-LUDHIANA DISTRICT - CARBON STOCK INVENTORY
+LUDHIANA DISTRICT - CARBON STOCK (TEST-SET ESTIMATE)
 =======================================================
 
 STUDY AREA
@@ -6,25 +6,27 @@ STUDY AREA
   Grid cell size     : 250m x 250m  =  6.25 ha per cell
   Total grid cells   : 66,790
   Agricultural cells : 50,402
-  Grid-based area    : 417,438 ha  (approx. 4,168 km2)
+  Grid-based area    : 417,438 ha
   Official area      : 376,700 ha  (3,767 km2)
 
 CARBON FORMULAS
-  Above-ground Carbon (tC/ha) = NPP (gC/m2/yr) x 0.47 / 100
-  Below-ground Carbon (tC/ha) = SOC (g/kg) x Bulk Density x 30 cm / 10
+  Above-ground (tC/ha) = NPP (gC/m2/yr) x 0.47 / 100
+  Below-ground (tC/ha) = SOC (g/kg) x BD x 30 cm / 10
 
 SCALING
   Above-ground : mean density x 39,082 genuine NPP cells x 6.25 ha
   Below-ground : mean density x 66,790 total cells x 6.25 ha
-  Genuine NPP cells = 39,082 (77.5% of 50,402 agri cells)
 
 CARBON DENSITY
-  Above-ground mean : 6.8278 tC/ha
+  Above-ground mean : 6.8279 tC/ha
   Below-ground mean : 125.9115 tC/ha
 
-DISTRICT CARBON STOCK
+DISTRICT CARBON STOCK (extrapolated from test set)
   -----------------------------------------------------------------
-  Above-ground  :        1,667,771.32 tC  =  1.6678 million tC  (3.08%)
-  Below-ground  :       52,560,180.48 tC  =  52.5602 million tC  (96.92%)
+  Above-ground  :        1,667,802.32 tC  =  1.6678 MtC  (3.08%)
+  Below-ground  :       52,560,180.48 tC  =  52.5602 MtC  (96.92%)
   -----------------------------------------------------------------
-  TOTAL         :       54,227,951.80 tC  =  54.2280 million tC
+  TOTAL         :       54,227,982.80 tC  =  54.2280 MtC
+
+NOTE: This is a validation estimate. The reported district figure comes
+from Step 8, which predicts every grid cell individually.
