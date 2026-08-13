@@ -32,6 +32,25 @@ above-ground carbon is close to zero for most of the year.
 
 ---
 
+## Dashboard
+
+![Home](docs/screenshots/home.png)
+*Soil carbon stock, annual above-ground assimilation, and model performance under both validation schemes*
+
+![Map](docs/screenshots/map.png)
+*250 m grid over satellite imagery, coloured by carbon density*
+
+![Cell detail](docs/screenshots/map-popup.png)
+*Per-cell values: predicted SOC, carbon density, terrain and texture*
+
+![Model](docs/screenshots/model.png)
+*Permutation importance, with coordinate-proxy features flagged*
+
+![Explorer](docs/screenshots/explorer.png)
+*Paginated view of all 64,545 grid cells*
+
+---
+
 ## Model performance
 
 Two validation schemes are reported, because random splitting proved optimistic
