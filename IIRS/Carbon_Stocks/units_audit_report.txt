@@ -1,0 +1,146 @@
+
+==========================================================================
+  LOADING
+==========================================================================
+Training sample: 20,000 cells
+Full district:   64,545 cells
+
+==========================================================================
+  1. SOIL ORGANIC CARBON
+==========================================================================
+SoilGrids reports soil organic carbon in dg/kg, which is TEN TIMES the
+value in g/kg. The carbon formula assumes g/kg. Punjab cropland typically
+holds 0.2-0.6% organic carbon, which is 2 to 6 g/kg.
+
+SOC_mean
+   observed   min       0.0000   max      40.7591   mean      28.3260   median      30.4741
+   expected   2 to 8 g/kg
+   VERDICT    about 6x too large -- likely a 10x unit scaling issue
+   note       if values sit around 20-60, they are dg/kg and must be divided by 10
+
+
+==========================================================================
+  2. BULK DENSITY
+==========================================================================
+SoilGrids reports bulk density in cg/cm3, which is 100x the value in
+g/cm3. Real agricultural topsoil is 1.2 to 1.7 g/cm3.
+
+bd_gcm3
+   observed   min       0.0000   max       1.5800   mean       1.3842   median       1.5000
+   expected   1.2 to 1.7 g/cm3
+   VERDICT    consistent with the expected range
+   note       if values sit around 120-170, they are cg/cm3 and must be divided by 100
+
+
+==========================================================================
+  3. SOIL TEXTURE
+==========================================================================
+SoilGrids reports sand, silt and clay in g/kg, not percent. Punjab
+alluvial soils are typically 40-70% sand and 10-30% clay.
+
+sand_pct
+   observed   min       0.0000   max      62.1300   mean      34.3081   median      37.1500
+   expected   40 to 70 %
+   VERDICT    consistent with the expected range
+   note       if values sit around 400-700, they are g/kg
+
+clay_pct
+   observed   min       0.0000   max      37.5500   mean      25.8109   median      27.2700
+   expected   10 to 30 %
+   VERDICT    consistent with the expected range
+   note       if values sit around 100-300, they are g/kg
+
+sand + clay = 60.12
+   Consistent with percentages; the remainder would be silt.
+
+==========================================================================
+  4. NET PRIMARY PRODUCTIVITY
+==========================================================================
+MODIS NPP (MOD17A3) is reported in kgC/m2/yr, and is often rescaled to
+gC/m2/yr. Irrigated double-cropped Punjab reaches roughly 600-1200
+gC/m2/yr. Note that NPP is ALREADY carbon, so multiplying by the 0.47
+biomass-to-carbon fraction counts the conversion twice.
+
+Agricultur
+   observed   min       2.0000   max    2846.0000   mean    1460.2077   median    1419.0000
+   expected   600 to 1200 gC/m2/yr
+   VERDICT    consistent with the expected range
+   note       values near 1.0 would indicate kgC/m2/yr
+
+
+==========================================================================
+  5. GRID AREA VERSUS OFFICIAL DISTRICT AREA
+==========================================================================
+Ludhiana district covers 3,767 km2, which is 376,700 ha. If the grid
+extends past the district boundary, every total is inflated in proportion.
+
+   grid cells        64,545
+   cell area         6.25 ha
+   grid area         403,406 ha  (4,034 km2)
+   official area     376,700 ha  (3,767 km2)
+   difference        +7.1%
+
+   VERDICT    the grid covers +7.1% more ground than the
+              district. All district totals are inflated by roughly
+              this amount unless cells outside the boundary are
+              removed or the totals are area-corrected.
+
+==========================================================================
+  6. WHAT THE CARBON TOTALS BECOME UNDER EACH CORRECTION
+==========================================================================
+Current reported figures
+   above-ground       2.0359 MtC
+   below-ground      50.8710 MtC
+   TOTAL             52.9069 MtC
+
+Below-ground density: 126.10 tC/ha over 0-30 cm
+Published values for Punjab cropland fall around 15-35 tC/ha.
+
+scenario                                      below-ground       TOTAL
+------------------------------------------------------------------------
+as currently calculated                           50.8710     52.9069
+if SOC is dg/kg (divide by 10)                     5.0871      7.1230
+if SOC dg/kg AND bulk density cg/cm3               0.0509      2.0868
+if SOC dg/kg AND area-corrected                    4.7503      6.6514
+
+Above-ground scenarios
+as currently calculated (NPP x 0.47)               2.0359
+without the 0.47 factor (NPP is already C)         4.3317
+
+==========================================================================
+  7. SANITY CHECK AGAINST PUBLISHED VALUES
+==========================================================================
+Reference points for Punjab agricultural land:
+
+   Soil organic carbon, 0-30 cm    15 - 35 tC/ha
+   Soil organic carbon content     0.2 - 0.6 %  (2 - 6 g/kg)
+   Bulk density, topsoil           1.3 - 1.7 g/cm3
+   Annual NPP, irrigated cropland  600 - 1200 gC/m2/yr
+   Above-ground crop biomass C     2 - 6 tC/ha at peak, near zero
+                                   after harvest
+
+Your below-ground density     126.10 tC/ha
+   That is about 5x the middle of the published range.
+   A unit scaling error is the most likely explanation.
+
+==========================================================================
+  WHAT TO DO
+==========================================================================
+1. Open the Google Earth Engine script that produced these exports and
+   check the units documented for each band. SoilGrids in particular
+   uses dg/kg for organic carbon and cg/cm3 for bulk density.
+
+2. If a scaling factor was missed, the fix is a single division applied
+   in the cleaning step. The models, the database and the website all
+   stay exactly as they are.
+
+3. Decide how to treat the above-ground pool. NPP is an annual flux, not
+   a stock. Either rename it as annual carbon accumulation, or drop the
+   0.47 factor if the source band is already in carbon units, or exclude
+   above-ground entirely and report a soil carbon inventory.
+
+4. If the grid extends beyond the district boundary, clip to the official
+   boundary or state the area difference alongside the total.
+
+5. Whatever you find, report the reasoning. A corrected figure with a
+   documented unit audit is a stronger result than an uncorrected one.

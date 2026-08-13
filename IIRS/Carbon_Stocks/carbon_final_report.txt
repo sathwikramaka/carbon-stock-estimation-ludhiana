@@ -19,14 +19,14 @@ SCALING
 
 CARBON DENSITY
   Above-ground mean : 6.8279 tC/ha
-  Below-ground mean : 125.9115 tC/ha
+  Below-ground mean : 12.5913 tC/ha
 
 DISTRICT CARBON STOCK (extrapolated from test set)
   -----------------------------------------------------------------
-  Above-ground  :        1,667,802.32 tC  =  1.6678 MtC  (3.08%)
-  Below-ground  :       52,560,180.48 tC  =  52.5602 MtC  (96.92%)
+  Above-ground  :        1,667,802.32 tC  =  1.6678 MtC  (24.09%)
+  Below-ground  :        5,256,088.08 tC  =  5.2561 MtC  (75.91%)
   -----------------------------------------------------------------
-  TOTAL         :       54,227,982.80 tC  =  54.2280 MtC
+  TOTAL         :        6,923,890.39 tC  =  6.9239 MtC
 
 NOTE: This is a validation estimate. The reported district figure comes
 from Step 8, which predicts every grid cell individually.

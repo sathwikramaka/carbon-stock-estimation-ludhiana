@@ -17,14 +17,14 @@ PREDICTION SOURCE
 
 CARBON DENSITY (mean)
   Above-ground (agri cells)  : 6.1683 tC/ha
-  Below-ground (all cells)   : 126.1037 tC/ha
+  Below-ground (all cells)   : 12.6104 tC/ha
 
 DISTRICT CARBON STOCK  <-- REPORT THESE FIGURES
   -------------------------------------------------------------------
-  Above-ground :           2,035,891.20 tC  =  2.0359 MtC  (3.85%)
-  Below-ground :          50,871,033.97 tC  =  50.8710 MtC  (96.15%)
+  Above-ground :           2,035,891.20 tC  =  2.0359 MtC  (28.58%)
+  Below-ground :           5,087,097.13 tC  =  5.0871 MtC  (71.42%)
   -------------------------------------------------------------------
-  TOTAL        :          52,906,925.17 tC  =  52.9069 MtC
+  TOTAL        :           7,122,988.34 tC  =  7.1230 MtC
 
 CO2 EQUIVALENT (x 3.667)
-  Total CO2e   : 193.9921 million tCO2e
+  Total CO2e   : 26.1176 million tCO2e

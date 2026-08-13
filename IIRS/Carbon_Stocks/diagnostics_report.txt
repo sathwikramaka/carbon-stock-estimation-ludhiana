@@ -1,0 +1,170 @@
+
+========================================================================
+  LOADING DATA
+========================================================================
+Above-ground rows: 20,000
+Below-ground rows: 20,000
+Centroids parsed. Lon range 75.349 to 76.335, lat range 30.564 to 31.020
+AG modelling rows: 12,602  features: 22
+BG modelling rows: 20,000  features: 6
+
+========================================================================
+  1. FEATURE CARDINALITY — is any predictor a regional label?
+========================================================================
+A feature with very few distinct values across 20,000 cells is a coarse
+raster. A tree can use it to identify *where* a cell is rather than what
+it is like, which looks like skill but does not generalise.
+
+Feature             unique   unique %         std         verdict
+------------------------------------------------------------------
+Kharif_Pre             812      6.44%     67.9077     low variety
+Rabi_Preci             834      6.62%     13.2317     low variety
+NDVI_Nov24           3,720     29.52%      0.1005              ok
+NDVI_Oct24           3,945     31.30%      0.0478              ok
+Rabi_LST_2           4,013     31.84%      0.5166              ok
+NDVI_Aug24           4,273     33.91%      0.0627              ok
+NDVI_Sep24           4,288     34.03%      0.0580              ok
+NDVI_Apr25           4,890     38.80%      0.0794              ok
+NDVI_Jan25           5,125     40.67%      0.0845              ok
+LST_Sept20           5,214     41.37%      0.4326              ok
+NDVI_Feb25           5,498     43.63%      0.0945              ok
+NDVI_Jun24           5,597     44.41%      0.0826              ok
+NDVI_Jul24           5,948     47.20%      0.0927              ok
+DEM_mean             6,006     47.66%     13.9210              ok
+NDVI_Mar25           6,073     48.19%      0.1001              ok
+NDVI_May25           6,219     49.35%      0.1129              ok
+NDVI_Dec24           6,439     51.10%      0.1061              ok
+Rabi_Peak_          12,601     99.99%      0.0766              ok
+Slope_mean          12,602    100.00%      0.9777              ok
+Kharif_pea          12,602    100.00%      0.0651              ok
+Kharif_Lud          12,602    100.00%      0.0638              ok
+NDWI_Rabi_          12,602    100.00%      0.0206              ok
+
+========================================================================
+  2. CORRELATION WITH TARGET — is SOC being predicted from itself?
+========================================================================
+sand_pct, clay_pct, bd_gcm3 and SOC_mean usually come from the same
+gridded soil product, where bulk density is derived from organic carbon
+by a pedotransfer function. If so, the predictors are not independent
+measurements and the R2 is inflated.
+
+BG feature         corr with SOC
+--------------------------------
+agri_class                0.6037  <-- strong
+DEM_mean                  0.0244
+Slope_mean               -0.1329
+sand_pct                  0.8956  <-- very strong
+clay_pct                  0.9498  <-- very strong
+bd_gcm3                   0.9660  <-- very strong
+
+AG feature         corr with NPP
+--------------------------------
+Rabi_Preci                0.5778
+DEM_mean                  0.5067
+Kharif_Pre                0.4909
+LST_Sept20               -0.4157
+NDVI_Sep24               -0.2179
+NDVI_Oct24               -0.1897
+Rabi_Peak_                0.1415
+NDVI_Jun24               -0.1284
+
+========================================================================
+  3. PERMUTATION IMPORTANCE — honest importance on held-out data
+========================================================================
+The dashboard chart uses impurity importance, which is biased towards
+continuous features with many split points. Permutation importance
+measures how much test performance actually drops when a feature is
+shuffled. Large gaps between the two rankings mean the chart misleads.
+
+ABOVE-GROUND (NPP)
+feature             impurity   permutation                  note
+----------------------------------------------------------------
+Rabi_Preci            0.3701        0.3521                      
+DEM_mean              0.1057        0.2383                      
+LST_Sept20            0.0552        0.0708                      
+NDVI_May25            0.0422        0.0325                      
+Kharif_Pre            0.0156        0.0243          rank 22 -> 5
+Rabi_LST_2            0.0339        0.0216                      
+NDVI_Aug24            0.0325        0.0159                      
+Slope_mean            0.0244        0.0145          rank 12 -> 8
+NDVI_Nov24            0.0221        0.0137          rank 16 -> 9
+NDVI_Feb25            0.0261        0.0115                      
+
+BELOW-GROUND (SOC)
+feature             impurity   permutation                  note
+----------------------------------------------------------------
+bd_gcm3               0.9297        1.6963                      
+clay_pct              0.0362        0.0235                      
+DEM_mean              0.0115        0.0151                      
+sand_pct              0.0132        0.0147                      
+Slope_mean            0.0075        0.0049                      
+agri_class            0.0019        0.0038                      
+
+========================================================================
+  4. BELOW-GROUND ABLATION — how much of the 0.97 is bulk density?
+========================================================================
+bd_gcm3 is used twice: as a predictor of SOC, and as a multiplier in
+BGC = SOC x BD x 30 / 10. If removing it collapses the score, the model
+was largely reading the carbon signal back out of the soil product.
+
+feature set                     R2      RMSE       MAE
+------------------------------------------------------
+all features                0.9665     1.393     1.013
+without bd_gcm3             0.9597     1.528     1.096
+without sand/clay/bd        0.3034     6.348     3.526
+only terrain               -0.0716     7.874     4.671
+
+Removing bd_gcm3 changes R2 by +0.0068
+VERDICT: the score does not depend heavily on bulk density alone.
+         Leakage may still come from sand/clay sharing a source.
+
+========================================================================
+  5. SPATIAL BLOCK CV — scores when neighbours cannot leak
+========================================================================
+A random split puts adjacent 250 m cells in both train and test. Because
+neighbouring cells are nearly identical, the model can look up an answer
+it has already seen. Blocking by geography removes that shortcut and
+gives the score you would get on genuinely new ground.
+
+Above-ground (NPP)     folds: 0.2204  0.4837  0.2402  0.5259  0.5400
+                       mean R2 = 0.4020  (sd 0.1416)
+
+Below-ground (SOC)     folds: 0.9224  0.9675  0.9665  0.9405  0.9432
+                       mean R2 = 0.9480  (sd 0.0171)
+
+model                    random split   spatial CV   inflation
+--------------------------------------------------------------
+Above-ground (NPP)             0.5426       0.4020     +0.1406
+Below-ground (SOC)             0.9665       0.9480     +0.0185
+
+The spatial CV column is the number to report as honest predictive skill.
+
+========================================================================
+  6. BASELINE — how much better than guessing the mean?
+========================================================================
+R2 of 0 means no better than always predicting the average. A model with
+a high R2 on a low-variance target may still be nearly useless.
+
+model                     model R2   baseline R2   target sd
+------------------------------------------------------------
+Above-ground (NPP)          0.4020       -0.0001    662.9360
+Below-ground (SOC)          0.9480       -0.0000      7.6517
+
+========================================================================
+  WHAT TO DO WITH THIS
+========================================================================
+1. Report the spatial CV scores as your headline model performance, and
+   the random-split scores alongside them as the optimistic case. Stating
+   both, with the reason for the gap, is stronger than quoting one number.
+
+2. If the bd_gcm3 ablation showed a large drop, say plainly in the report
+   that the below-ground R2 is inflated by shared provenance between the
+   soil predictors and the SOC target, and that bulk density additionally
+   appears in the carbon conversion formula.
+
+3. If any feature came out as COARSE in section 1, it is acting as a
+   regional identifier. Either drop it and re-check the score, or state
+   that its apparent importance reflects spatial position, not process.
+
+4. The district carbon total is 96% below-ground, so corrections to the
+   above-ground model will barely move it. Effort belongs on the SOC side.
