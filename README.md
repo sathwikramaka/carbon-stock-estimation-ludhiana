@@ -21,6 +21,7 @@ Analytics.
 | Grid cells analysed | 64,545 |
 | Grid resolution | 250 m × 250 m (6.25 ha per cell) |
 | Grid area | 403,406 ha |
+| Area-corrected to official boundary | 4.750 MtC |
 
 **The two carbon figures are reported separately and are not summed.** Soil
 organic carbon is a *stock*, accumulated over decades and measured in tonnes.
@@ -29,25 +30,6 @@ measured in tonnes per year. Adding them would combine different units and
 different time dimensions. In an annual cropping system the distinction matters
 particularly, since above-ground biomass is harvested each season and standing
 above-ground carbon is close to zero for most of the year.
-
----
-
-## Dashboard
-
-![Home](docs/screenshots/home.png)
-*Soil carbon stock, annual above-ground assimilation, and model performance under both validation schemes*
-
-![Map](docs/screenshots/map.png)
-*250 m grid over satellite imagery, coloured by carbon density*
-
-![Cell detail](docs/screenshots/map-popup.png)
-*Per-cell values: predicted SOC, carbon density, terrain and texture*
-
-![Model](docs/screenshots/model.png)
-*Permutation importance, with coordinate-proxy features flagged*
-
-![Explorer](docs/screenshots/explorer.png)
-*Paginated view of all 64,545 grid cells*
 
 ---
 
@@ -61,11 +43,25 @@ on spatially autocorrelated data.
 | Below-ground (SOC) | 0.9665 | **0.9481** |
 | Above-ground (NPP) | 0.5426 | **0.4028** |
 
+> **A note on the below-ground R².** The SOC target is SoilGrids-derived, and
+> several predictors — sand, clay, bulk density — are also SoilGrids layers.
+> Their mutual correlations run 0.84–0.97, and two are physically inverted: sand
+> and clay correlate +0.84 where competing texture fractions should oppose one
+> another, and bulk density correlates +0.97 with organic carbon where added
+> organic matter should reduce it through greater pore space. The 0.9481
+> therefore measures how well the model reproduces the SoilGrids surface, not how
+> well it predicts measured soil carbon. It is a reproducibility check on a
+> gridded product, not a validated soil prediction. The above-ground NPP model,
+> whose target is independent of its predictors, is the honest indication of
+> predictive skill at 0.4028. Independent field measurements would be required to
+> validate the SOC model.
+
 A random 80/20 split places adjacent 250 m cells in both training and test sets.
 Because neighbouring cells are strongly correlated, the model can retrieve an
 answer it has already seen. Spatial block cross-validation partitions the
 district into an 8 × 8 geographic grid and holds out whole blocks. **The spatial
-CV figures are the defensible measures of predictive skill.**
+CV figures are the defensible measures of predictive skill** — subject to the
+provenance caveat above for the below-ground model.
 
 ---
 
@@ -77,7 +73,7 @@ CV figures are the defensible measures of predictive skill.**
 |---|---|---|
 | Net primary productivity | MODIS | Above-ground target |
 | Soil organic carbon, texture, bulk density | SoilGrids | Below-ground target and predictors |
-| NDVI, 12 monthly composites | Sentinel-2 / Landsat via GEE | Above-ground predictors |
+| NDVI, 12 monthly composites | Google Earth Engine | Above-ground predictors |
 | Elevation, slope | SRTM-derived | Both models |
 | Land surface temperature, precipitation | Gridded climate products | Above-ground predictors |
 
@@ -112,8 +108,15 @@ rather than silently applied, and each reduced the headline figure.
 
 Input variables were audited against published physical ranges for Punjab
 agricultural soils. SoilGrids reports organic carbon in dg/kg, bulk density in
-cg/cm³, and texture in g/kg. Three of the four bands had been rescaled during
-the Earth Engine export; organic carbon had not.
+cg/cm³, and texture in g/kg. Three of the four bands had been rescaled during the
+Earth Engine export; organic carbon had not.
+
+| Variable | Native unit | As extracted | Rescaled during export |
+|---|---|---|---|
+| Bulk density | cg/cm³ | 1.38 g/cm³ | Yes (÷100) |
+| Sand | g/kg | 34.3% | Yes (÷10) |
+| Clay | g/kg | 25.8% | Yes (÷10) |
+| **Organic carbon** | **dg/kg** | **28.33** | **No** |
 
 Uncorrected, this produced a soil carbon density of 126.1 tC/ha — roughly five
 times the upper end of published values, implying 2.8% soil organic carbon in
@@ -153,26 +156,25 @@ but because the rainfall surface correlates 0.879 with longitude while NPP
 correlates 0.633 with longitude. The model tracks a district-wide east–west
 gradient.
 
-A model excluding all four proxies scored 0.3685 under spatial CV, below the
-full model's 0.4028 but above a coordinates-only baseline of 0.3185 —
-demonstrating that the retained NDVI and terrain features carry genuine local
-information.
+A model excluding all four proxies scored 0.3685 under spatial CV, below the full
+model's 0.4028 but above a coordinates-only baseline of 0.3185 — demonstrating
+that the retained NDVI and terrain features carry genuine local information.
 
-Feature importance is reported as permutation importance on held-out data
-rather than impurity importance, which favours continuous predictors with many
-split points.
+Feature importance is reported as permutation importance on held-out data rather
+than impurity importance, which favours continuous predictors with many split
+points.
 
 ---
 
 ## Limitations
 
-1. **Shared provenance in soil data.** Sand, clay, bulk density and soil organic
-   carbon are all layers of one gridded product. Their mutual correlations range
-   0.84–0.97, and two relationships are physically inverted: sand and clay
-   correlate +0.84 where competing fractions should oppose, and bulk density
-   correlates +0.97 with organic carbon where added organic matter should reduce
-   it. The below-ground R² measures agreement within one soil product, not
-   accuracy against field measurement.
+1. **Shared provenance in soil data.** As stated alongside the model performance
+   table: the SOC target and several predictors are layers of one gridded
+   product. Their mutual correlations run 0.84–0.97 with two physically inverted
+   signs. The below-ground R² measures agreement within that product, not
+   accuracy against field measurement. An ablation test confirmed the predictors
+   are largely interchangeable — removing bulk density entirely changes R² by
+   0.007.
 
 2. **No field validation.** No independent soil samples were available. The
    estimate is a remote-sensing inventory, not a measured one.
@@ -182,16 +184,25 @@ split points.
 4. **Grid overruns the district boundary** by 7.1% (403,406 ha against an
    official 376,700 ha). Area-corrected soil carbon is 4.750 MtC.
 
-5. **NDVI gaps.** NDVI_Aug24 is missing for 49% of cells due to monsoon cloud,
+5. **Climate covariates are position proxies** at 250 m resolution, as
+   documented above.
+
+6. **NDVI gaps.** NDVI_Aug24 is missing for 49% of cells due to monsoon cloud,
    filled with monthly medians.
 
-6. **Duplicate grid identifiers.** The export contained 66,790 rows but 64,545
+7. **Duplicate grid identifiers.** The export contained 66,790 rows but 64,545
    unique cells; duplicates resolved by retaining the highest agricultural
    fraction per cell. Filenames retain the 66790 label for continuity.
 
-7. **Above-ground is a flux.** A true above-ground biomass stock would require
+8. **Above-ground is a flux.** A true above-ground biomass stock would require
    allometric, canopy-height, radar, or dedicated biomass products such as GEDI
    or ESA CCI Biomass.
+
+9. **Prediction where direct extraction was possible.** Both SoilGrids and MODIS
+   NPP have global coverage. Extracting them directly for all 64,545 cells would
+   remove the prediction step and its uncertainty. The machine-learning component
+   demonstrates the modelling workflow required by this project; it is not the
+   most accurate route to the carbon figures themselves.
 
 ---
 
@@ -264,9 +275,10 @@ Dashboard at `http://localhost:5000`. Health check at `/api/health`.
 
 ## Further work
 
-- Field soil sampling to calibrate the gridded soil product
-- Direct extraction of SOC and NPP for all cells rather than prediction, since
-  both source products have global coverage
+- Field soil sampling to calibrate the gridded soil product — the single change
+  that would convert the below-ground figure from product agreement into
+  validated prediction
+- Direct extraction of SOC and NPP for all cells rather than prediction
 - Clipping the grid to the official district boundary
 - Above-ground biomass estimation to replace the NPP proxy
 - Spatial cross-validation adopted from the outset
