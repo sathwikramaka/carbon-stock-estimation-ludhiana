@@ -16,15 +16,15 @@ PREDICTION SOURCE
   Non-agricultural (AGC=0)   : 11,736
 
 CARBON DENSITY (mean)
-  Above-ground (agri cells)  : 6.1683 tC/ha
+  Above-ground (agri cells)  : 13.1241 tC/ha
   Below-ground (all cells)   : 12.6104 tC/ha
 
 DISTRICT CARBON STOCK  <-- REPORT THESE FIGURES
   -------------------------------------------------------------------
-  Above-ground :           2,035,891.20 tC  =  2.0359 MtC  (28.58%)
-  Below-ground :           5,087,097.13 tC  =  5.0871 MtC  (71.42%)
+  Above-ground :           4,331,683.41 tC  =  4.3317 MtC  (45.99%)
+  Below-ground :           5,087,097.13 tC  =  5.0871 MtC  (54.01%)
   -------------------------------------------------------------------
-  TOTAL        :           7,122,988.34 tC  =  7.1230 MtC
+  TOTAL        :           9,418,780.54 tC  =  9.4188 MtC
 
 CO2 EQUIVALENT (x 3.667)
-  Total CO2e   : 26.1176 million tCO2e
+  Total CO2e   : 34.5355 million tCO2e

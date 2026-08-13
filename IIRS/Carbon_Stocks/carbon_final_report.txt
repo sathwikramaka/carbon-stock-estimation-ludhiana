@@ -10,7 +10,7 @@ STUDY AREA
   Official area      : 376,700 ha  (3,767 km2)
 
 CARBON FORMULAS
-  Above-ground (tC/ha) = NPP (gC/m2/yr) x 0.47 / 100
+  Above-ground (tC/ha) = NPP (gC/m2/yr) x 1.0 / 100
   Below-ground (tC/ha) = SOC (g/kg) x BD x 30 cm / 10
 
 SCALING
@@ -18,15 +18,15 @@ SCALING
   Below-ground : mean density x 66,790 total cells x 6.25 ha
 
 CARBON DENSITY
-  Above-ground mean : 6.8279 tC/ha
+  Above-ground mean : 14.5275 tC/ha
   Below-ground mean : 12.5913 tC/ha
 
 DISTRICT CARBON STOCK (extrapolated from test set)
   -----------------------------------------------------------------
-  Above-ground  :        1,667,802.32 tC  =  1.6678 MtC  (24.09%)
-  Below-ground  :        5,256,088.08 tC  =  5.2561 MtC  (75.91%)
+  Above-ground  :        3,548,515.57 tC  =  3.5485 MtC  (40.30%)
+  Below-ground  :        5,256,088.08 tC  =  5.2561 MtC  (59.70%)
   -----------------------------------------------------------------
-  TOTAL         :        6,923,890.39 tC  =  6.9239 MtC
+  TOTAL         :        8,804,603.65 tC  =  8.8046 MtC
 
 NOTE: This is a validation estimate. The reported district figure comes
 from Step 8, which predicts every grid cell individually.
