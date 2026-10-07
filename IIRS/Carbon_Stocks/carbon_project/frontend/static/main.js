@@ -1,18 +1,13 @@
 /* ═══════════════════════════════════════════════════════════
-   CARBON STOCK INTELLIGENCE — main.js  v6  FINAL
+   Ludhiana carbon dashboard — main.js v8
 
-   MAP FIXES:
-   - #map-wrap uses position:sticky + height:calc(100vh - 60px)
-     with inner flex so leaflet-map gets all remaining space.
-   - Leaflet.invalidateSize() called after each tab show.
-   - Dark tile: CartoDB Dark Matter with correct subdomains.
-   - Grid lines: weight:1.5, white stroke → clearly visible.
-   - Google Satellite as default basemap.
-   - DEM layer colours ALL 64k cells (not just 2521 test cells).
+   Every figure on the page comes from the API, which serves what
+   notebooks/02_carbon_pipeline.ipynb wrote to results/. There are no
+   numeric fallbacks: if the API is unreachable the page shows "—"
+   rather than a stale number.
 ═══════════════════════════════════════════════════════════ */
 "use strict";
 
-// Chart defaults
 Chart.defaults.color       = "rgb(90,138,159)";
 Chart.defaults.borderColor = "rgba(0,160,220,.08)";
 Chart.defaults.font.family = "'JetBrains Mono',monospace";
@@ -22,12 +17,45 @@ const C = { green:"#00ff88", cyan:"#00d4ff", blue:"#0ea5e9",
             purple:"#a78bfa", yellow:"#fbbf24", orange:"#f97316" };
 const CH = {};
 function kill(id){ if(CH[id]){CH[id].destroy();delete CH[id];} }
-
 function base(x={}){
   return { responsive:true, maintainAspectRatio:false,
     animation:{duration:800,easing:"easeOutQuart"},
     plugins:{legend:{display:false},...x.plugins}, ...x };
 }
+const AXIS = (title)=>({grid:{color:"rgba(0,160,220,.07)"},ticks:{color:"#5a8a9f"},
+  title:{display:!!title,text:title||"",color:"#5a8a9f",font:{size:10}}});
+
+// ── helpers ──────────────────────────────────────────────
+function esc(v){ return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function fmt(v,d=2){ return (v==null||!isFinite(+v))?"—":(+v).toFixed(d); }
+function ci(e,d=3){ return e&&e.ci95?`95% CI ${(+e.ci95[0]).toFixed(d)}–${(+e.ci95[1]).toFixed(d)}`:""; }
+function setTxt(id,v){ const e=document.getElementById(id); if(e&&v!=null) e.textContent=v; }
+function setBar(id,p){ const e=document.getElementById(id); if(e) e.style.width=Math.min(+p,100)+"%"; }
+function countUp(id,target,dec=2,ms=1400){
+  const el=document.getElementById(id); if(!el) return;
+  if(target==null||!isFinite(+target)){ el.textContent="—"; return; }
+  let start=null;
+  const step=ts=>{ if(!start) start=ts; const p=Math.min((ts-start)/ms,1);
+    el.textContent=(target*(1-Math.pow(1-p,4))).toFixed(dec); if(p<1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
+function makeHist(vals,bins=10){
+  if(!vals.length) return{labels:[],counts:[]};
+  const s=[...vals].sort((a,b)=>a-b), mn=s[Math.floor(.01*(s.length-1))], mx=s[Math.floor(.99*(s.length-1))];
+  const st=(mx-mn)/bins||1, c=Array(bins).fill(0);
+  vals.forEach(v=>{ if(v>=mn&&v<=mx) c[Math.min(Math.floor((v-mn)/st),bins-1)]++; });
+  return{labels:c.map((_,i)=>(mn+i*st).toFixed(2)),counts:c};
+}
+function rows(tbody,html){ const t=document.getElementById(tbody); if(t) t.innerHTML=html; }
+async function api(url){
+  const r=await fetch(url);
+  const body=await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error(body.error||`${url} → ${r.status}`);
+  return body;
+}
+let SUMMARY=null, METRICS=null;
+async function summary(){ return SUMMARY ??= await api("/api/summary"); }
+async function metrics(){ return METRICS ??= await api("/api/metrics"); }
 
 // ── NAVIGATION ───────────────────────────────────────────
 function showPage(name){
@@ -37,12 +65,11 @@ function showPage(name){
   document.querySelectorAll(".nav-link").forEach(a=>{
     if(a.textContent.trim().toLowerCase()===name) a.classList.add("active");
   });
-  if(name==="map")      { loadMap(); }
+  if(name==="map")       loadMap();
   if(name==="analytics") loadAnalytics();
   if(name==="model")     loadModel();
   if(name==="explorer")  { ePage=1; loadExplorer(); }
 }
-
 function showTab(id,btn){
   document.querySelectorAll(".tp").forEach(p=>p.classList.remove("active"));
   document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));
@@ -51,44 +78,54 @@ function showTab(id,btn){
   if(id==="tf"&&window._fi) drawFI(window._fi);
 }
 
-async function api(url){
-  const r=await fetch(url);
-  if(!r.ok) throw new Error(url+" → "+r.status);
-  return r.json();
-}
-
 // ── HOME ─────────────────────────────────────────────────
 async function loadHome(){
-  let s={};
-  try{ s=await api("/api/summary"); }catch(e){ console.warn(e); }
-  const agc=+(s.agc_million_tc||4.3317),bgc=+(s.bgc_million_tc||5.0871);
-  countUp("kpi-total",bgc,4); countUp("kpi-ag",agc,4); countUp("kpi-bg",bgc,4);
-  countUp("kpi-agr2",+(s.ag_r2||0.5426),4); countUp("kpi-bgr2",+(s.bg_r2||0.9665),4);
-  setTxt("nav-total",bgc.toFixed(2)+" MtC");
-  setTxt("chip-cells",(s.total_cells||64545).toLocaleString()+" Cells");
-  setTxt("ib-total-cells",(s.total_cells||64545).toLocaleString()+" total cells");
-  setTxt("ib-agri-cells",(s.agri_cells||52809).toLocaleString()+" agri cells");
-  setTimeout(()=>{
-    setBar("kp-ag",100); setBar("kp-bg",100);
-    setBar("kp-agr2",(s.ag_r2||0.5426)*100); setBar("kp-bgr2",(s.bg_r2||0.9665)*100);
-  },700);
+  let s, m;
+  try{ s=await summary(); }catch(e){
+    setTxt("status-banner","Results unavailable: "+e.message);
+    return;
+  }
+  try{ m=await metrics(); }catch(e){ console.warn(e); }
+  const soil=s.soil, npp=s.npp, crop=s.crop_yield_crosscheck, prev=s.previous_published||{};
+  countUp("kpi-soil",soil.stock_mtc.estimate,3); setTxt("kpi-soil-ci",ci(soil.stock_mtc,3)+(soil.stock_mtc.ci95?" · sampling only":""));
+  countUp("kpi-density",soil.mean_density_tc_ha.estimate,2); setTxt("kpi-density-ci",ci(soil.mean_density_tc_ha,2));
+  countUp("kpi-npp",npp.flux_mtc_per_year.estimate,3); setTxt("kpi-npp-ci",ci(npp.flux_mtc_per_year,3));
+  if(crop){ countUp("kpi-crop",crop.total_mtc_median,2);
+    setTxt("kpi-crop-ci",`90% range ${crop.total_mtc_p05_p95[0].toFixed(2)}–${crop.total_mtc_p05_p95[1].toFixed(2)}`); }
+  const rf=m?.soc_experiment?.models?.find(x=>x.model==="Random forest");
+  const co=m?.soc_experiment?.models?.find(x=>x.model==="Coordinates only");
+  if(rf){ countUp("kpi-socr2",rf.r2,3); setTxt("kpi-socr2-ci",co?`coordinates alone: ${co.r2.toFixed(3)}`:""); }
 
-  kill("home-bar");
-  CH["home-bar"]=new Chart(document.getElementById("chart-home-bar"),{
-    type:"bar",
-    data:{labels:["Above-ground (AGC)","Below-ground (BGC)"],
-      datasets:[{data:[agc,bgc],backgroundColor:[C.green,C.blue],
-        borderColor:["#00cc6e","#0880b8"],borderWidth:1.5,borderRadius:4,borderSkipped:false}]},
-    options:base({
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.parsed.y.toFixed(4)} MtC`}}},
-      scales:{
-        x:{grid:{color:"rgba(0,160,220,.07)"},ticks:{color:"#5a8a9f",font:{family:"Space Grotesk",size:11}}},
-        y:{grid:{color:"rgba(0,160,220,.07)"},ticks:{color:"#5a8a9f"},
-           title:{display:true,text:"million tC",color:"#5a8a9f",font:{size:10}}}
-      }
-    })
-  });
+  setTxt("nav-total",soil.stock_mtc.estimate.toFixed(2)+" MtC");
+  setTxt("chip-cells",s.grid.cells.toLocaleString()+" cells");
+  setTxt("chip-mode",s.mode==="v1-interim"?"v1 interim · provisional":"v2 census");
+  setTxt("status-banner","");
+  const b=document.getElementById("status-banner");
+  if(b){
+    const strong=document.createElement("strong");
+    strong.textContent=(s.status||"").toUpperCase()+" · ";
+    b.append(strong, s.mode==="v1-interim"
+      ? "Computed from the existing Earth Engine exports after repairing their known defects. Re-run notebooks/00_gee_extraction.ipynb to replace this with a clean census."
+      : "Computed from the validated v2 Earth Engine extraction.");
+    b.append(` Run ${s.run_date} · data source: ${s.source}.`);
+  }
 
+  const change=(label,old,now,d)=>`<tr><td>${esc(label)}</td><td class="cmp-old">${esc(old)}</td><td class="cmp-new">${esc(now)}</td></tr>`;
+  rows("changes-tbody",[
+    change("SOC stock (MtC)", fmt(prev.soil_stock_mtc,4), fmt(soil.stock_mtc.estimate,4)),
+    change("NPP flux (MtC/yr)", fmt(prev.npp_flux_mtc_per_year,4), fmt(npp.flux_mtc_per_year.estimate,4)),
+    change("SOC model spatial R²", fmt(prev.soc_r2_spatial,3), rf?fmt(rf.r2,3):"—"),
+    change("Grid cells", (prev.cells||0).toLocaleString(), s.grid.cells.toLocaleString()),
+  ].join(""));
+  setTxt("changes-why",prev.why_superseded?"Why: "+prev.why_superseded+".":"");
+  rows("caveats",(s.caveats||[]).map(c=>`<li>${esc(c)}</li>`).join(""));
+
+  setTxt("ib-area",`Grid area ${Math.round(s.grid.area_ha).toLocaleString()} ha`);
+  setTxt("ib-coverage",`${(s.grid.coverage_of_official_area*100).toFixed(1)}% of Census area (${s.grid.official_area_ha.toLocaleString()} ha)`);
+  setTxt("ib-cells",`${s.grid.cells.toLocaleString()} cells · soil data ${Math.round(soil.soil_area_ha.estimate).toLocaleString()} ha`);
+  setTxt("ib-agri",s.grid.agri_cells!=null?`${s.grid.agri_cells.toLocaleString()} agricultural cells`:"");
+  setTxt("ib-sample",s.grid.sampled_cells!=null?`Random sample: ${s.grid.sampled_cells.toLocaleString()} cells`:"Every cell observed");
+  setTxt("ib-f-soil",s.formulas?.soil||"—"); setTxt("ib-f-npp",s.formulas?.npp||"—");
 }
 
 // ── MAP ──────────────────────────────────────────────────
@@ -137,17 +174,23 @@ function mapSearchInput(val){
       .then(r=>r.json()).then(data=>{
         const apiResults=data.map(d=>({name:d.display_name.split(",").slice(0,2).join(", "),lat:parseFloat(d.lat),lng:parseFloat(d.lon)}));
         const all=[...matches,...apiResults].slice(0,7);
-        res.innerHTML=all.map((p,i)=>
-          `<div class="map-sr-item" onclick="mapSearchSelect(${p.lat},${p.lng},'${p.name.replace(/'/g,"\'")}')">📍 ${p.name}</div>`
-        ).join("");
-        res.classList.toggle("open", all.length>0);
+        renderSearchResults(all);
       }).catch(()=>{
-        res.innerHTML=matches.map(p=>
-          `<div class="map-sr-item" onclick="mapSearchSelect(${p.lat},${p.lng},'${p.name.replace(/'/g,"\'")}')">📍 ${p.name}</div>`
-        ).join("");
-        res.classList.toggle("open", matches.length>0);
+        renderSearchResults(matches);
       });
   },300);
+}
+
+// Geocoder names come from a third party: build nodes, never interpolate into HTML.
+function renderSearchResults(items){
+  const res=document.getElementById("map-search-results");
+  res.replaceChildren(...items.map(p=>{
+    const d=document.createElement("div");
+    d.className="map-sr-item"; d.textContent="📍 "+p.name;
+    d.addEventListener("click",()=>mapSearchSelect(p.lat,p.lng,p.name));
+    return d;
+  }));
+  res.classList.toggle("open", items.length>0);
 }
 
 function mapSearchSelect(lat,lng,name){
@@ -197,7 +240,8 @@ function showInfoPanel(lat,lng,features){
   // Each feature is a polygon — use centroid approximation
   let nearest=null, minDist=Infinity;
   features.forEach(f=>{
-    const coords=f.geometry.coordinates[0][0];
+    const g=f.geometry;
+    const coords=g.type==="MultiPolygon"?g.coordinates[0][0]:g.coordinates[0];
     const fLng=coords.reduce((s,c)=>s+c[0],0)/coords.length;
     const fLat=coords.reduce((s,c)=>s+c[1],0)/coords.length;
     const d=Math.pow(fLat-lat,2)+Math.pow(fLng-lng,2);
@@ -211,14 +255,13 @@ function showInfoPanel(lat,lng,features){
   none.style.display="none";
   data.style.display="block";
 
-  setTxt("cip-coords",`Grid #${p.grid_id}  ·  ${lat.toFixed(4)}°N, ${lng.toFixed(4)}°E`);
-  setTxt("cip-agc",  p.agc>0 ? p.agc.toFixed(4) : "—");
-  setTxt("cip-bgc",  p.bgc>0 ? p.bgc.toFixed(4) : "—");
-  setTxt("cip-dem",  p.dem ? (+p.dem).toFixed(1)+"m" : "—");
-  setTxt("cip-agri", p.agri===1 ? "Agricultural" : "Non-Agri");
-  setTxt("cip-npp",  p.npp>0 ? p.npp.toFixed(1) : "—");
-  setTxt("cip-tot",  p.tot>0 ? p.tot.toFixed(4) : "—");
-  setTxt("cip-extra",`Clay: ${(+p.clay||0).toFixed(1)}%  ·  Sand: ${(+p.sand||0).toFixed(1)}%  ·  BD: ${(+p.bd||0).toFixed(2)} g/cm³`);
+  setTxt("cip-coords",`${p.cell_id}  ·  ${lat.toFixed(4)}°N, ${lng.toFixed(4)}°E`);
+  setTxt("cip-soc",  fmt(p.soc,2));
+  setTxt("cip-npp",  fmt(p.npp,3));
+  setTxt("cip-dem",  p.dem!=null ? (+p.dem).toFixed(1)+" m" : "—");
+  setTxt("cip-agri", p.agri===1 ? "Agricultural" : p.agri===0 ? "Non-agricultural" : "—");
+  setTxt("cip-soil", p.soil_status||"—");
+  setTxt("cip-extra",`SOC ${fmt(p.soc_gkg,2)} g/kg (${p.soc_source||"—"}) · NPP ${p.npp_source||"—"} · BD ${fmt(p.bd,2)} g/cm³ · valid soil ${p.w_soil!=null?Math.round(p.w_soil*100)+"%":"—"}`);
 }
 
 function closeInfoPanel(){
@@ -255,8 +298,8 @@ async function loadAreaCells(lat,lng){
 
     // Merge with existing cells (no duplicates)
     if(GJ_DATA&&GJ_DATA.features.length>0){
-      const existingIds=new Set(GJ_DATA.features.map(f=>f.properties.grid_id));
-      const newFeats=gj.features.filter(f=>!existingIds.has(f.properties.grid_id));
+      const existingIds=new Set(GJ_DATA.features.map(f=>f.properties.cell_id));
+      const newFeats=gj.features.filter(f=>!existingIds.has(f.properties.cell_id));
       GJ_DATA={type:"FeatureCollection",features:[...GJ_DATA.features,...newFeats]};
     } else {
       GJ_DATA=gj;
@@ -277,39 +320,20 @@ async function loadAreaCells(lat,lng){
   }
 }
 
-// Tile definitions
-// Google Satellite/Hybrid/Street via mt1.google.com
-// All 4 tiles use Google Maps servers → correct Indian borders on all tiles
+// Basemaps with their required attribution. (Google's tile servers need an API
+// key under its terms, so they are not used.)
+const ESRI_ATTR="Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community";
+const OSM_ATTR="© OpenStreetMap contributors";
 const TILES = {
-  sat: {
-    // Google Satellite — photorealistic imagery
-    url:  "https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
-    attr: "© Google Maps",
-    subs: ["mt0","mt1","mt2","mt3"],
-    maxZ: 20,
-  },
-  hyb: {
-    // Google Hybrid — satellite + labels
-    url:  "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
-    attr: "© Google Maps",
-    subs: ["mt0","mt1","mt2","mt3"],
-    maxZ: 20,
-  },
-  str: {
-    // Google Street Map — standard road map
-    url:  "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
-    attr: "© Google Maps",
-    subs: ["mt0","mt1","mt2","mt3"],
-    maxZ: 20,
-  },
-  dark: {
-    // Google Street Map — clean vector map, perfect for dark filter
-    url:  "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
-    attr: "© Google Maps",
-    subs: ["mt0","mt1","mt2","mt3"],
-    maxZ: 20,
-  },
+  sat:  [{url:"https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", attr:ESRI_ATTR, maxZ:19}],
+  hyb:  [{url:"https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", attr:ESRI_ATTR, maxZ:19},
+         {url:"https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}", attr:ESRI_ATTR, maxZ:19}],
+  str:  [{url:"https://tile.openstreetmap.org/{z}/{x}/{y}.png", attr:OSM_ATTR, maxZ:19}],
+  dark: [{url:"https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", attr:OSM_ATTR+" © CARTO", maxZ:20, subs:"abcd"}],
 };
+function tileGroup(k){
+  return L.layerGroup(TILES[k].map(t=>L.tileLayer(t.url,{attribution:t.attr,maxZoom:t.maxZ,subdomains:t.subs||"abc"})));
+}
 let TILE_L=null, ACTIVE_TILE="sat";
 
 // 5-stop vivid colour ramp
@@ -330,13 +354,7 @@ async function loadMap(){
     L.control.zoom({position:"bottomright"}).addTo(MAP);
     L.control.scale({position:"bottomleft",imperial:false}).addTo(MAP);
 
-    TILE_L=L.tileLayer(TILES.sat.url,{
-      attribution:TILES.sat.attr,maxZoom:TILES.sat.maxZ,subdomains:TILES.sat.subs,
-    }).addTo(MAP);
-    document.getElementById("leaflet-map").style.filter="none";
-    setTimeout(()=>{
-      document.querySelectorAll(".leaflet-tile-pane").forEach(p=>p.style.filter="none");
-    },300);
+    TILE_L=tileGroup("sat").addTo(MAP);
 
     MAP.on("zoomend",()=>{
       const b=document.getElementById("zoom-banner");
@@ -356,10 +374,11 @@ async function loadMap(){
   // Only fetch initial random sample once
   if(GJ_DATA){ drawPolygons(GJ_DATA); return; }
 
-  setTxt("map-de","Fetching initial 250 m × 250 m polygons from PostGIS…");
+  setTxt("map-de","Fetching a random sample of grid cells…");
   try{
     const gj=await api("/api/geojson?limit=1200");
     GJ_DATA=gj;
+    setTxt("mf-source","data: "+(gj.source||"—"));
     setTxt("map-de",
       `${gj.features.length.toLocaleString()} polygons loaded · 💡 Click anywhere on the map to load cells and see carbon data`);
     drawPolygons(gj);
@@ -369,67 +388,55 @@ async function loadMap(){
   }
 }
 
+const SRC_COL={"observed":"#00ff88","interpolated":"#fbbf24","no soil data":"#64748b","outside MOD17 domain":"#64748b"};
+function layerValue(p,key){
+  if(key==="dem")  return p.dem;
+  if(key==="agri") return p.agnonag;
+  if(key==="npp")  return p.npp;
+  if(key==="soc")  return p.soc;
+  return null;
+}
+
 function drawPolygons(gj){
   if(GJ_LAYER){ MAP.removeLayer(GJ_LAYER); GJ_LAYER=null; }
+  const key=MAP_LAYER;
+  const vals=gj.features.map(f=>layerValue(f.properties,key)).filter(v=>v!=null&&isFinite(v));
+  const sorted=[...vals].sort((a,b)=>a-b);
+  const q=t=>sorted.length?sorted[Math.min(sorted.length-1,Math.floor(t*(sorted.length-1)))]:0;
+  const lo=q(.02), hi=q(.98);                         // robust colour range
+  const mean=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:NaN;
 
-  const key = MAP_LAYER;
-  let vals=[];
-  if(key==="dem")  vals=gj.features.map(f=>+(f.properties.dem  ||0)).filter(v=>v>0);
-  if(key==="slope")vals=gj.features.map(f=>+(f.properties.slope||0)).filter(v=>v>0);
-  if(key==="agc")  vals=gj.features.filter(f=>f.properties.has_carbon&&f.properties.agc>0).map(f=>+f.properties.agc);
-  if(key==="bgc")  vals=gj.features.filter(f=>f.properties.has_carbon&&f.properties.bgc>0).map(f=>+f.properties.bgc);
-  if(key==="agri") vals=gj.features.map(f=>+(f.properties.agnonag||0));
+  const kp=document.getElementById("map-kpis"); if(kp) kp.style.display="flex";
+  const unit=key==="npp"?" tC/ha/yr":key==="soc"?" tC/ha":key==="dem"?" m":"";
+  if(key==="src"){
+    const obs=gj.features.filter(f=>f.properties.soc_source==="observed").length;
+    setTxt("mk-mean",obs.toLocaleString()+" observed"); setTxt("mk-max","—"); setTxt("mk-min","—");
+    setTxt("leg-lo","interpolated"); setTxt("leg-hi","observed");
+  } else {
+    setTxt("mk-mean",isFinite(mean)?mean.toFixed(3)+unit:"—");
+    setTxt("mk-max",vals.length?sorted[sorted.length-1].toFixed(3):"—");
+    setTxt("mk-min",vals.length?sorted[0].toFixed(3):"—");
+    setTxt("leg-lo",vals.length?lo.toFixed(2):"Low"); setTxt("leg-hi",vals.length?hi.toFixed(2):"High");
+  }
+  setTxt("mk-cnt",gj.features.length.toLocaleString());
 
-  const lo  = vals.length ? Math.min(...vals) : 0;
-  const hi  = vals.length ? Math.max(...vals) : 1;
-  const mean= vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : 0;
-
-  // Update KPI pills
-  const kp=document.getElementById("map-kpis");
-  if(kp) kp.style.display="flex";
-  setTxt("mk-mean", mean.toFixed(3)+(key!=="agri"?" m/tC/ha":""));
-  setTxt("mk-max",  hi.toFixed(3));
-  setTxt("mk-min",  lo.toFixed(3));
-  setTxt("mk-cnt",  gj.features.length.toLocaleString());
-
-  GJ_LAYER = L.geoJSON(gj, {
+  GJ_LAYER=L.geoJSON(gj,{
     style(f){
-      const p=f.properties;
-      let col;
-      if(key==="agc"){
-        col = p.has_carbon&&p.agc>0
-          ? ramp(Math.max(0,Math.min(1,(p.agc-lo)/(hi-lo||1))))
-          : "#1a3a5a";
-      } else if(key==="bgc"){
-        col = p.has_carbon&&p.bgc>0
-          ? ramp(Math.max(0,Math.min(1,(p.bgc-lo)/(hi-lo||1))))
-          : "#1a3a5a";
+      const p=f.properties; let col;
+      if(key==="src"){
+        col=SRC_COL[p.soc_source]||"#64748b";
       } else if(key==="agri"){
-        col = p.agri===1
-          ? `hsl(${140+(p.agnonag||0)*30},90%,50%)`
-          : `hsl(210,70%,45%)`;
+        col=p.agri===1?`hsl(${140+(p.agnonag||0)*30},90%,50%)`:`hsl(210,70%,45%)`;
       } else {
-        // DEM or slope — works for ALL cells
-        const v = key==="dem" ? +(p.dem||0) : +(p.slope||0);
-        col = ramp(Math.max(0,Math.min(1,(v-lo)/(hi-lo||1))));
+        const v=layerValue(p,key);
+        col=(v==null||!isFinite(v))?"#334155":ramp(Math.max(0,Math.min(1,(v-lo)/((hi-lo)||1))));
       }
-      return {
-        fillColor:   col,
-        fillOpacity: 0.80,
-        // FIX: white 1.2px stroke makes grid lines clearly visible
-        color:       "rgba(255,255,255,0.35)",
-        weight:      1.2,
-        opacity:     1,
-      };
+      return {fillColor:col,fillOpacity:0.8,color:"rgba(255,255,255,0.35)",weight:1.2,opacity:1};
     },
     onEachFeature(f,layer){
-      const p=f.properties;
-      layer.bindPopup(popup(p), { maxWidth:240 });
+      layer.bindPopup(popup(f.properties),{maxWidth:260});
       layer.on({
-        mouseover(e){
-          e.target.setStyle({ fillOpacity:1, weight:2.5, color:"#ffffff", opacity:0.9 });
-          e.target.bringToFront();
-        },
+        mouseover(e){ e.target.setStyle({fillOpacity:1,weight:2.5,color:"#ffffff",opacity:0.9}); e.target.bringToFront(); },
         mouseout(e){ GJ_LAYER.resetStyle(e.target); },
       });
     }
@@ -439,28 +446,26 @@ function drawPolygons(gj){
 function popup(p){
   const r=(l,v,c)=>`
     <div style="background:rgba(255,255,255,.05);border-radius:5px;padding:5px 9px">
-      <div style="color:#1e4a62;font-size:.58rem;letter-spacing:1.2px;text-transform:uppercase">${l}</div>
-      <div style="color:${c};font-weight:700;font-size:.82rem;margin-top:2px">${v}</div>
+      <div style="color:#1e4a62;font-size:.58rem;letter-spacing:1.2px;text-transform:uppercase">${esc(l)}</div>
+      <div style="color:${c};font-weight:700;font-size:.82rem;margin-top:2px">${esc(v)}</div>
     </div>`;
-  return `<div style="min-width:210px;font-family:'Space Grotesk',sans-serif">
-    <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:.92rem;color:#00d4ff;
-         border-bottom:1px solid rgba(0,180,255,.2);padding-bottom:8px;margin-bottom:10px">
-      Grid Cell #${p.grid_id}
-    </div>
+  return `<div style="min-width:220px;font-family:'Space Grotesk',sans-serif">
+    <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:.9rem;color:#00d4ff;
+         border-bottom:1px solid rgba(0,180,255,.2);padding-bottom:8px;margin-bottom:10px">${esc(p.cell_id)}</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px">
-      ${r("AGC tC/ha",  p.agc>0 ? p.agc.toFixed(4) : "—", p.agc>0?"#00ff88":"#3a607a")}
-      ${r("BGC tC/ha",  p.bgc>0 ? p.bgc.toFixed(4) : "—", p.bgc>0?"#0ea5e9":"#3a607a")}
-      ${r("Class",      p.agri ? "Agricultural" : "Non-agri", p.agri?"#00ff88":"#f97316")}
-      ${r("DEM (m)",    (+p.dem).toFixed(1),  "#fbbf24")}
-      ${r("Clay %",     (+p.clay).toFixed(1), "#0ea5e9")}
-      ${r("BD g/cm³",   (+p.bd).toFixed(2),   "#a78bfa")}
+      ${r("SOC stock tC/ha", fmt(p.soc,2), "#0ea5e9")}
+      ${r("NPP flux tC/ha/yr", fmt(p.npp,3), "#00ff88")}
+      ${r("SOC source", p.soc_source||"—", "#8ab4c8")}
+      ${r("NPP source", p.npp_source||"—", "#8ab4c8")}
+      ${r("Class", p.agri===1?"Agricultural":"Non-agri", p.agri===1?"#00ff88":"#f97316")}
+      ${r("DEM (m)", fmt(p.dem,1), "#fbbf24")}
     </div>
   </div>`;
 }
 
 function setLayer(l){
   MAP_LAYER=l;
-  ["dem","agri","agc","bgc"].forEach(k=>{
+  ["dem","agri","npp","soc","src"].forEach(k=>{
     document.getElementById("btn-"+k)?.classList.toggle("active", k===l);
   });
   if(GJ_DATA) drawPolygons(GJ_DATA);
@@ -468,31 +473,9 @@ function setLayer(l){
 
 function setTile(k){
   if(TILE_L) MAP.removeLayer(TILE_L);
-  const t=TILES[k];
-  TILE_L = L.tileLayer(t.url, {
-    attribution: t.attr,
-    maxZoom:     t.maxZ,
-    subdomains:  t.subs,
-  }).addTo(MAP);
+  TILE_L=tileGroup(k).addTo(MAP);
   ACTIVE_TILE=k;
-  // Re-add polygon layer on top of new basemap
-  if(GJ_LAYER){ GJ_LAYER.bringToFront(); }
-  // Apply dark CSS filter only to the tile pane (not the polygon overlay)
-  // This keeps polygon colours correct while making the basemap dark
-  const tilePanes = document.querySelectorAll(".leaflet-tile-pane");
-  const overlayPanes = document.querySelectorAll(".leaflet-overlay-pane");
-  if(k === "dark"){
-    // grayscale + invert = dark background with white borders and labels
-    tilePanes.forEach(p => p.style.filter = "grayscale(1) invert(1) brightness(0.85)");
-    // Keep polygon layer colours normal by counter-inverting
-    overlayPanes.forEach(p => p.style.filter = "none");
-  } else {
-    tilePanes.forEach(p    => p.style.filter = "none");
-    overlayPanes.forEach(p => p.style.filter = "none");
-  }
-  const mapEl = document.getElementById("leaflet-map");
-  mapEl.style.filter = "none"; // always keep map container unfiltered
-  // Update button states
+  if(GJ_LAYER) GJ_LAYER.bringToFront();
   ["sat","hyb","str","dark"].forEach(n=>{
     document.getElementById("ts-"+n)?.classList.toggle("active", n===k);
   });
@@ -500,289 +483,172 @@ function setTile(k){
 
 // ── ANALYTICS ────────────────────────────────────────────
 async function loadAnalytics(){
-  let s={},ndvi=[],carbon={ag:[],bg:[]};
-  try{
-    [s,ndvi,carbon]=await Promise.all([
-      api("/api/summary"), api("/api/ndvi"), api("/api/carbon?per_page=500")
-    ]);
-  }catch(e){ console.warn(e); }
+  let s;
+  try{ s=await summary(); }catch(e){ setTxt("a-sub","Results unavailable: "+e.message); return; }
+  const soil=s.soil, npp=s.npp, crop=s.crop_yield_crosscheck;
+  setTxt("a-sub",`${s.mode} · ${s.status} · run ${s.run_date}`);
+  setTxt("a-soil",fmt(soil.stock_mtc.estimate,3)); setTxt("a-soil-ci",ci(soil.stock_mtc,3));
+  setTxt("a-npp",fmt(npp.flux_mtc_per_year.estimate,3)); setTxt("a-npp-ci",ci(npp.flux_mtc_per_year,3));
+  if(crop){ setTxt("a-crop",fmt(crop.total_mtc_median,2));
+    setTxt("a-crop-ci",`90% range ${crop.total_mtc_p05_p95[0].toFixed(2)}–${crop.total_mtc_p05_p95[1].toFixed(2)}`); }
 
-  const agc=+(s.agc_million_tc||4.3317),bgc=+(s.bgc_million_tc||5.0871);
-  setTxt("a-total",bgc.toFixed(4)); setTxt("a-ag",agc.toFixed(4));
-  setTxt("a-bg",bgc.toFixed(4));
+  const sens=list=>(list||[]).map(v=>`<tr><td>${esc(v.variant)}</td><td style="color:#e8f4f8;font-weight:700">${fmt(v.estimate,3)}</td><td>${v.ci95?fmt(v.ci95[0],3)+"–"+fmt(v.ci95[1],3):"—"}</td></tr>`).join("");
+  rows("sens-soil",sens(soil.sensitivity)||'<tr><td colspan="3">Census mode: no sampling variants</td></tr>');
+  rows("sens-npp",sens(npp.sensitivity)||'<tr><td colspan="3">Census mode: no sampling variants</td></tr>');
+  if(crop){
+    setTxt("crop-text",
+      `Reported Ludhiana wheat and paddy yields, converted with IPCC (2019) factors, put at least `+
+      `${crop.total_mtc_median.toFixed(2)} MtC/yr (90% range ${crop.total_mtc_p05_p95[0].toFixed(2)}–${crop.total_mtc_p05_p95[1].toFixed(2)}) `+
+      `through the district's two main crops. Correctly scaled MOD17 reports ${npp.flux_mtc_per_year.estimate.toFixed(3)} MtC/yr — `+
+      `${(crop.mod17_over_crop_ratio*100).toFixed(1)}% of that lower bound — and negative annual NPP in `+
+      `${npp.negative_share_agricultural!=null?(npp.negative_share_agricultural*100).toFixed(0)+"%":"some"} of agricultural cells. `+
+      `The old dashboard figure looked plausible only because the product's scale factor had been skipped, inflating it tenfold.`);
+  }
 
-  kill("pool-bar");
-  CH["pool-bar"]=new Chart(document.getElementById("chart-pool-bar"),{
-    type:"bar",
-    data:{labels:["Above-ground","Below-ground"],
-      datasets:[{data:[agc,bgc],backgroundColor:[C.green,C.blue],
-        borderColor:["#00cc6e","#0880b8"],borderWidth:1.5,borderRadius:4,borderSkipped:false}]},
-    options:base({
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.parsed.y.toFixed(4)} MtC`}}},
-      scales:{
-        x:{grid:{color:"rgba(0,160,220,.07)"},ticks:{color:"#5a8a9f",font:{family:"Space Grotesk",size:11}}},
-        y:{grid:{color:"rgba(0,160,220,.07)"},ticks:{color:"#5a8a9f"},
-           title:{display:true,text:"million tC",color:"#5a8a9f",font:{size:10}}}
-      }
-    })
-  });
-
-  // NDVI
-  const sorted=[...ndvi].sort((a,b)=>a.sort_order-b.sort_order);
-  const months=sorted.map(d=>d.month), vals=sorted.map(d=>+(d.median_ndvi||d.mean_ndvi||0));
-  const ptClr=sorted.map(d=>d.season==="Kharif"?C.green:C.blue);
-  const med=vals.length?[...vals].sort((a,b)=>a-b)[Math.floor(vals.length/2)]:0;
-  setTxt("ndvi-med",med.toFixed(3));
-
+  let nd=[];
+  try{ nd=await api("/api/ndvi"); }catch(e){ console.warn(e); }
+  const sorted=[...nd].sort((a,b)=>a.sort_order-b.sort_order);
+  const peak=season=>sorted.filter(d=>d.season===season).reduce((b,d)=>(!b||d.median_ndvi>b.median_ndvi)?d:b,null);
+  const kp=peak("Kharif"), rp=peak("Rabi"), gap=sorted.reduce((b,d)=>(!b||d.missing_share>b.missing_share)?d:b,null);
+  setTxt("ndvi-kharif",kp?`${kp.month} — ${kp.median_ndvi.toFixed(3)}`:"—");
+  setTxt("ndvi-rabi",rp?`${rp.month} — ${rp.median_ndvi.toFixed(3)}`:"—");
+  setTxt("ndvi-gap",gap?`${gap.month} — ${(gap.missing_share*100).toFixed(0)}% missing`:"—");
   kill("ndvi");
-  const nctx=document.getElementById("chart-ndvi").getContext("2d");
-  const ng=nctx.createLinearGradient(0,0,0,290);
-  ng.addColorStop(0,"rgba(0,255,136,.32)"); ng.addColorStop(1,"rgba(0,255,136,.02)");
-  CH["ndvi"]=new Chart(nctx,{
-    type:"line",
-    data:{labels:months,datasets:[{label:"Median NDVI",data:vals,
-      borderColor:C.green,borderWidth:2.5,
-      pointBackgroundColor:ptClr,pointBorderColor:"#020509",pointBorderWidth:1.5,
-      pointRadius:5,pointHoverRadius:8,fill:true,backgroundColor:ng,tension:0.4}]},
-    options:base({
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` NDVI = ${c.parsed.y.toFixed(4)}`}}},
-      scales:{
-        x:{grid:{color:"rgba(0,160,220,.07)"},ticks:{color:"#5a8a9f",font:{family:"Space Grotesk",size:11}}},
-        y:{grid:{color:"rgba(0,160,220,.07)"},min:0,max:1,ticks:{color:"#5a8a9f"},
-           title:{display:true,text:"Median NDVI",color:"#5a8a9f",font:{size:10}}}
-      }
-    })
-  });
+  const ctx=document.getElementById("chart-ndvi").getContext("2d");
+  const g=ctx.createLinearGradient(0,0,0,290); g.addColorStop(0,"rgba(0,255,136,.32)"); g.addColorStop(1,"rgba(0,255,136,.02)");
+  CH["ndvi"]=new Chart(ctx,{type:"line",
+    data:{labels:sorted.map(d=>d.month),datasets:[{label:"Median NDVI",data:sorted.map(d=>d.median_ndvi),
+      borderColor:C.green,borderWidth:2.5,pointBackgroundColor:sorted.map(d=>d.season==="Kharif"?C.green:d.season==="Rabi"?C.blue:C.yellow),
+      pointBorderColor:"#020509",pointRadius:5,fill:true,backgroundColor:g,tension:0.35}]},
+    options:base({plugins:{legend:{display:false},tooltip:{callbacks:{
+      label:c=>` NDVI ${c.parsed.y.toFixed(3)} · ${(sorted[c.dataIndex].missing_share*100).toFixed(0)}% cells missing`}}},
+      scales:{x:AXIS(),y:{...AXIS("Median NDVI"),min:0,max:1}}})});
 
-  // AGC histogram
-  const agV=(carbon.ag||[]).map(d=>d.agc_tC_ha).filter(Boolean), agH=makeHist(agV,8);
-  kill("ag-hist");
-  CH["ag-hist"]=new Chart(document.getElementById("chart-ag-hist"),{
-    type:"bar",
-    data:{labels:agH.labels,datasets:[{data:agH.counts,
-      backgroundColor:agH.labels.map((_,i)=>`hsl(${145+i*5},88%,${48+i*2}%)`),
-      borderColor:C.green,borderWidth:1,borderRadius:4,borderSkipped:false}]},
-    options:base({
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.parsed.y} cells`}}},
-      scales:{
-        x:{grid:{color:"rgba(0,160,220,.07)"},ticks:{color:"#5a8a9f"},title:{display:true,text:"AGC (tC/ha)",color:"#5a8a9f",font:{size:10}}},
-        y:{grid:{color:"rgba(0,160,220,.07)"},ticks:{color:"#5a8a9f"},title:{display:true,text:"Cell Count",color:"#5a8a9f",font:{size:10}}}
-      }
-    })
-  });
-
-  // BGC histogram
-  const bgV=(carbon.bg||[]).map(d=>d.bgc_tC_ha).filter(Boolean), bgH=makeHist(bgV,8);
-  kill("bg-hist");
-  CH["bg-hist"]=new Chart(document.getElementById("chart-bg-hist"),{
-    type:"bar",
-    data:{labels:bgH.labels,datasets:[{data:bgH.counts,
-      backgroundColor:bgH.labels.map((_,i)=>`hsl(${200+i*8},82%,${48+i*2}%)`),
-      borderColor:C.blue,borderWidth:1,borderRadius:4,borderSkipped:false}]},
-    options:base({
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.parsed.y} cells`}}},
-      scales:{
-        x:{grid:{color:"rgba(0,160,220,.07)"},ticks:{color:"#5a8a9f"},title:{display:true,text:"BGC (tC/ha)",color:"#5a8a9f",font:{size:10}}},
-        y:{grid:{color:"rgba(0,160,220,.07)"},ticks:{color:"#5a8a9f"},title:{display:true,text:"Cell Count",color:"#5a8a9f",font:{size:10}}}
-      }
-    })
-  });
+  let gj={features:[]};
+  try{ gj=await api("/api/geojson?limit=3000"); }catch(e){ console.warn(e); }
+  const npv=gj.features.map(f=>f.properties.npp).filter(v=>v!=null);
+  const sov=gj.features.map(f=>f.properties.soc).filter(v=>v!=null);
+  setTxt("hist-n-npp",`${npv.length.toLocaleString()} random cells · tC/ha/yr`);
+  setTxt("hist-n-soc",`${sov.length.toLocaleString()} random cells · tC/ha`);
+  for(const [id,vals,col,title] of [["npp-hist",npv,C.green,"MOD17 NPP flux (tC/ha/yr)"],["soc-hist",sov,C.blue,"SOC stock (tC/ha)"]]){
+    const h=makeHist(vals,12); kill(id);
+    CH[id]=new Chart(document.getElementById("chart-"+id),{type:"bar",
+      data:{labels:h.labels,datasets:[{data:h.counts,backgroundColor:col+"99",borderColor:col,borderWidth:1,borderRadius:3}]},
+      options:base({plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.parsed.y} cells`}}},
+        scales:{x:AXIS(title),y:AXIS("cells")}})});
+  }
 }
 
 // ── MODEL ────────────────────────────────────────────────
 async function loadModel(){
-  let m={};
-  try{ m=await api("/api/metrics"); }catch(e){ console.warn(e); }
-  window._fi=m.feature_importance||[];
+  let m;
+  try{ m=await metrics(); }catch(e){ setTxt("soc-note","Metrics unavailable: "+e.message); return; }
+  const card=(key,exp,unit)=>{
+    if(!exp){ setTxt(key+"-note","Not run in census mode: no model is needed."); return; }
+    const rf=exp.models.find(x=>x.model==="Random forest"), co=exp.models.find(x=>x.model==="Coordinates only");
+    const ring=document.getElementById("ring-"+key);
+    setTimeout(()=>{ if(ring) ring.style.strokeDashoffset=251.2*(1-Math.max(0,rf.r2)); },300);
+    setTxt("ring-"+key+"-t",(rf.r2*100).toFixed(1)+"%");
+    setTxt(key+"-rmse",`${rf.rmse.toFixed(3)} ${unit}`);
+    setTxt(key+"-coord",co.r2.toFixed(3));
+    setTxt(key+"-n",exp.n.toLocaleString());
+    setTxt(key+"-sd",`${exp.target_sd} ${unit}`);
+    setTxt(key+"-note",`Beats coordinates alone by ${(rf.r2-co.r2).toFixed(3)} R². ${exp.validation}.`);
+  };
+  card("soc",m.soc_experiment,"g/kg");
+  card("npp",m.npp_experiment,"gC/m²/yr");
 
-  setTimeout(()=>{
-    const C251=251.2;
-    const ra=document.getElementById("ring-ag"), rb=document.getElementById("ring-bg");
-    if(ra){
-      ra.style.strokeDashoffset=C251*(1-(m.ag_r2||0.5426));
-      const t=ra.closest("svg").querySelector("text");
-      if(t) t.textContent=((m.ag_r2||0.5426)*100).toFixed(1)+"%";
-    }
-    if(rb){
-      rb.style.strokeDashoffset=C251*(1-(m.bg_r2||0.9665));
-      const t=rb.closest("svg").querySelector("text");
-      if(t) t.textContent=((m.bg_r2||0.9665)*100).toFixed(1)+"%";
-    }
-  },400);
-
-  setTxt("ag-rmse",m.ag_rmse?.toFixed(3)); setTxt("ag-mae",m.ag_mae?.toFixed(3));
-  setTxt("ag-tr",(m.ag_train_cells||10081).toLocaleString()); setTxt("ag-te",(m.ag_test_cells||2521).toLocaleString());
-  setTxt("bg-rmse",m.bg_rmse?.toFixed(3)); setTxt("bg-mae",m.bg_mae?.toFixed(3));
-  setTxt("bg-tr",(m.bg_train_cells||16000).toLocaleString()); setTxt("bg-te",(m.bg_test_cells||4000).toLocaleString());
-
-  const tbody=document.getElementById("cmp-tbody");
-  if(tbody){
-    tbody.innerHTML="";
-    (m.comparison||[]).forEach(r=>{
-      const tr=document.createElement("tr");
-      tr.innerHTML=`<td>${r.model}</td>
-        <td style="color:${r.target==="NPP"?C.green:C.blue}">${r.target}</td>
-        <td style="color:#e8f4f8;font-weight:700">${r.r2.toFixed(4)}</td>
-        <td>${r.rmse.toFixed(3)}</td><td>${r.mae.toFixed(3)}</td>
-        <td>${r.best?`<span style="color:${C.green};font-weight:700">✓ Best ${r.target}</span>`:'<span style="color:#1e4a62">—</span>'}</td>`;
-      tbody.appendChild(tr);
-    });
-  }
+  window._fi=(m.npp_experiment?.permutation_importance||[]).map(d=>({...d,type:d.feature.startsWith("NDVI")?"ndvi":"other"}));
+  const tr=(t,name,r,n)=>`<tr><td style="color:${t==="SOC"?C.blue:C.green}">${esc(t)}</td><td>${esc(name)}</td>
+    <td style="color:#e8f4f8;font-weight:700">${fmt(r.r2,3)}</td><td>${fmt(r.rmse,3)}</td><td>${fmt(r.mae,3)}</td><td>${n!=null?n.toLocaleString():"—"}</td></tr>`;
+  let html="";
+  for(const [t,exp] of [["SOC",m.soc_experiment],["NPP",m.npp_experiment]]) if(exp) exp.models.forEach(r=>html+=tr(t,r.model,r,exp.n));
+  for(const [k,v] of Object.entries(m.interpolation||{}))
+    html+=tr(k.startsWith("soc")?"SOC":"NPP",`Inverse-distance gap filling (random ${v.folds}-fold, k=${v.k})`,v,v.n);
+  rows("cmp-tbody",html);
 }
 
 function drawFI(fi){
   if(!fi?.length) return;
-  const sorted=[...fi].sort((a,b)=>a.importance-b.importance);
+  const s=[...fi].sort((a,b)=>a.importance-b.importance);
   kill("fi");
-  CH["fi"]=new Chart(document.getElementById("chart-fi"),{
-    type:"bar",
-    data:{labels:sorted.map(d=>d.feature),
-      datasets:[{data:sorted.map(d=>d.importance),
-        backgroundColor:sorted.map(d=>d.type==="ndvi"?C.green:C.yellow),
-        borderColor:sorted.map(d=>d.type==="ndvi"?"#00cc6e":"#d4990e"),
-        borderWidth:1,borderRadius:4,borderSkipped:false}]},
+  CH["fi"]=new Chart(document.getElementById("chart-fi"),{type:"bar",
+    data:{labels:s.map(d=>d.feature),datasets:[{data:s.map(d=>d.importance),
+      backgroundColor:s.map(d=>d.type==="ndvi"?C.green:C.yellow),borderWidth:0,borderRadius:4}]},
     options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,
-      animation:{duration:900,easing:"easeOutQuart"},
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.parsed.x.toFixed(4)}`}}},
-      scales:{
-        x:{grid:{color:"rgba(0,160,220,.07)"},ticks:{color:"#5a8a9f"},title:{display:true,text:"Importance Score",color:"#5a8a9f",font:{size:10}}},
-        y:{grid:{display:false},ticks:{color:"#8ab4c8",font:{size:11,family:"JetBrains Mono"}}}
-      }}
-  });
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.parsed.x.toFixed(4)} drop in R²`}}},
+      scales:{x:AXIS("Drop in R² when the feature is shuffled"),y:{grid:{display:false},ticks:{color:"#8ab4c8"}}}}});
 }
 
 // ── EXPLORER ─────────────────────────────────────────────
-let EAG=[],EBG=[],ePage=1;
+let EROWS=[], ePage=1;
 const EPP=100;
 
 async function loadExplorer(){
   const tl=document.getElementById("tbl-load"), tb=document.getElementById("exp-tbl");
-  if(tl) tl.style.display="block";
-  if(tb) tb.style.display="none";
-  let res={ag:[],bg:[],ag_total:0,bg_total:0};
-  try{ res=await api(`/api/carbon?page=${ePage}&per_page=${EPP}`); }catch(e){ console.warn(e); }
-  EAG=res.ag||[]; EBG=res.bg||[];
-  setTxt("ec-tot",(res.ag_total||0).toLocaleString()+" AG · "+(res.bg_total||0).toLocaleString()+" BG");
-  buildPages(res.ag_total||0,EPP);
+  if(tl){ tl.style.display="block"; tl.textContent="Loading…"; } if(tb) tb.style.display="none";
+  let res={records:[],total:0};
+  try{ res=await api(`/api/carbon?page=${ePage}&per_page=${EPP}`); }
+  catch(e){ if(tl) tl.textContent="Unavailable: "+e.message; return; }
+  EROWS=res.records||[];
+  setTxt("ec-tot",(res.total||0).toLocaleString());
+  buildPages(res.total||0,EPP);
   renderTbl();
 }
 
+function filtered(){
+  const q=(document.getElementById("fs")?.value||"").toLowerCase().trim();
+  const mn=parseFloat(document.getElementById("fmin")?.value), mx=parseFloat(document.getElementById("fmax")?.value);
+  return EROWS.filter(d=>(!q||String(d.cell_id).toLowerCase().includes(q))
+    &&(isNaN(mn)||(d.npp_flux_tc_ha_yr!=null&&d.npp_flux_tc_ha_yr>=mn))
+    &&(isNaN(mx)||(d.npp_flux_tc_ha_yr!=null&&d.npp_flux_tc_ha_yr<=mx)));
+}
+
 function renderTbl(){
-  const search=(document.getElementById("fs")?.value||"").toLowerCase();
-  const mn=parseFloat(document.getElementById("fmin")?.value)||-Infinity;
-  const mx=parseFloat(document.getElementById("fmax")?.value)||Infinity;
-  const filt=EAG.filter(d=>
-    (!search||String(d.cell_index).includes(search))&&
-    (d.agc_tC_ha||0)>=mn&&(d.agc_tC_ha||0)<=mx
-  );
-  const mAG=filt.length?filt.reduce((s,d)=>s+(d.agc_tC_ha||0),0)/filt.length:0;
-  const mBG=EBG.length?EBG.reduce((s,d)=>s+(d.bgc_tC_ha||0),0)/EBG.length:0;
-  setTxt("ec-show",filt.length+" cells");
-  setTxt("ec-mag",mAG.toFixed(4)+" tC/ha");
-  setTxt("ec-mbg",mBG.toFixed(4)+" tC/ha");
-
-  const tbody=document.getElementById("exp-tbody");
-  if(tbody){
-    tbody.innerHTML="";
-    filt.slice(0,50).forEach(ag=>{
-      const bg=EBG.find(b=>b.cell_index===ag.cell_index)||{};
-      const agc=ag.agc_tC_ha||0, bgc=bg.bgc_tC_ha||0, tot=agc+bgc;
-      const g=tot>150?"a":tot>100?"b":"c";
-      const tr=document.createElement("tr");
-      tr.innerHTML=`<td style="color:#00d4ff">#${ag.cell_index}</td>
-        <td style="color:#00ff88">${agc.toFixed(4)}</td>
-        <td style="color:#0ea5e9">${bgc>0?bgc.toFixed(4):"—"}</td>
-        <td style="color:#a78bfa;font-weight:600">${tot>0?tot.toFixed(4):"—"}</td>
-        <td>${(ag.predicted_npp||0).toFixed(2)}</td>
-        <td>${bg.predicted_soc?bg.predicted_soc.toFixed(4):"—"}</td>
-        <td><span class="g${g}">${g==="a"?"HIGH":g==="b"?"MED":"LOW"}</span></td>`;
-      tbody.appendChild(tr);
-    });
-  }
-
+  const f=filtered();
+  const mean=k=>{ const v=f.map(d=>d[k]).filter(x=>x!=null); return v.length?v.reduce((a,b)=>a+b,0)/v.length:null; };
+  setTxt("ec-show",f.length+" cells");
+  setTxt("ec-mnpp",fmt(mean("npp_flux_tc_ha_yr"),3)+" tC/ha/yr");
+  setTxt("ec-msoc",fmt(mean("soc_stock_tc_ha"),2)+" tC/ha");
+  rows("exp-tbody",f.slice(0,50).map(d=>`<tr>
+    <td style="color:#00d4ff">${esc(d.cell_id)}</td><td>${esc(d.soil_status)}</td>
+    <td>${fmt(d.soc_gkg,3)}</td><td style="color:#0ea5e9">${fmt(d.soc_stock_tc_ha,2)}</td><td class="src-tag">${esc(d.soc_source)}</td>
+    <td style="color:#00ff88">${fmt(d.npp_flux_tc_ha_yr,3)}</td><td class="src-tag">${esc(d.npp_source)}</td></tr>`).join(""));
   const tl=document.getElementById("tbl-load"), tb=document.getElementById("exp-tbl");
   if(tl) tl.style.display="none"; if(tb) tb.style.display="table";
   const more=document.getElementById("exp-more");
-  if(more){more.style.display=filt.length>50?"block":"none";more.textContent=`Showing 50 of ${filt.length}`;}
+  if(more){ more.style.display=f.length>50?"block":"none"; more.textContent=`Showing 50 of ${f.length}`; }
 
-  // Scatter
-  const pts=EAG.filter(a=>a.agc_tC_ha>0).slice(0,300).map(ag=>{
-    const bg=EBG.find(b=>b.cell_index===ag.cell_index);
-    return bg?{x:ag.agc_tC_ha,y:bg.bgc_tC_ha}:null;
-  }).filter(Boolean);
+  const pts=f.filter(d=>d.npp_flux_tc_ha_yr!=null&&d.soc_stock_tc_ha!=null).map(d=>({x:d.npp_flux_tc_ha_yr,y:d.soc_stock_tc_ha}));
   kill("scatter");
-  CH["scatter"]=new Chart(document.getElementById("chart-scatter"),{
-    type:"scatter",
-    data:{datasets:[{label:"Cells",data:pts,backgroundColor:C.blue,pointRadius:3,pointHoverRadius:6}]},
-    options:base({
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` AGC:${c.parsed.x.toFixed(4)} BGC:${c.parsed.y.toFixed(4)}`}}},
-      scales:{
-        x:{title:{display:true,text:"AGC (tC/ha)",color:"#5a8a9f"},grid:{color:"rgba(0,160,220,.07)"},ticks:{color:"#5a8a9f"}},
-        y:{title:{display:true,text:"BGC (tC/ha)",color:"#5a8a9f"},grid:{color:"rgba(0,160,220,.07)"},ticks:{color:"#5a8a9f"}}
-      }
-    })
-  });
-
-  // Histogram
-  const hd=makeHist(filt.map(d=>d.agc_tC_ha).filter(Boolean),8);
+  CH["scatter"]=new Chart(document.getElementById("chart-scatter"),{type:"scatter",
+    data:{datasets:[{data:pts,backgroundColor:C.blue,pointRadius:3}]},
+    options:base({scales:{x:AXIS("MOD17 NPP flux (tC/ha/yr)"),y:AXIS("SOC stock (tC/ha)")}})});
+  const h=makeHist(f.map(d=>d.npp_flux_tc_ha_yr).filter(v=>v!=null),10);
   kill("ehist");
-  CH["ehist"]=new Chart(document.getElementById("chart-ehist"),{
-    type:"bar",
-    data:{labels:hd.labels,datasets:[{data:hd.counts,
-      backgroundColor:hd.labels.map((_,i)=>`hsl(${142+i*12},85%,${48+i*2}%)`),
-      borderColor:C.green,borderWidth:1,borderRadius:4,borderSkipped:false}]},
-    options:base({
-      plugins:{legend:{display:false}},
-      scales:{
-        x:{title:{display:true,text:"AGC (tC/ha)",color:"#5a8a9f"},grid:{color:"rgba(0,160,220,.07)"},ticks:{color:"#5a8a9f"}},
-        y:{grid:{color:"rgba(0,160,220,.07)"},ticks:{color:"#5a8a9f"}}
-      }
-    })
-  });
+  CH["ehist"]=new Chart(document.getElementById("chart-ehist"),{type:"bar",
+    data:{labels:h.labels,datasets:[{data:h.counts,backgroundColor:C.green+"99",borderColor:C.green,borderWidth:1,borderRadius:3}]},
+    options:base({scales:{x:AXIS("MOD17 NPP flux (tC/ha/yr)"),y:AXIS("cells")}})});
 }
 
 function doFilter(){ renderTbl(); }
 function buildPages(total,pp){
   const n=Math.ceil(total/pp), wrap=document.getElementById("pages");
   if(!wrap) return; wrap.innerHTML="";
-  for(let i=1;i<=Math.min(n,8);i++){
+  const first=Math.max(1,Math.min(ePage-3,n-7));
+  for(let i=first;i<=Math.min(n,first+7);i++){
     const b=document.createElement("button");
-    b.className="pgb"+(i===ePage?" active":"");
-    b.textContent=i; b.onclick=()=>{ePage=i;loadExplorer();};
+    b.className="pgb"+(i===ePage?" active":""); b.textContent=i;
+    b.onclick=()=>{ePage=i;loadExplorer();};
     wrap.appendChild(b);
   }
 }
 function doExport(){
-  const rows=EAG.map(ag=>{
-    const bg=EBG.find(b=>b.cell_index===ag.cell_index)||{};
-    return `${ag.cell_index},${(ag.agc_tC_ha||0).toFixed(4)},${(bg.bgc_tC_ha||0).toFixed(4)},${((ag.agc_tC_ha||0)+(bg.bgc_tC_ha||0)).toFixed(4)},${(ag.predicted_npp||0).toFixed(2)},${(bg.predicted_soc||0).toFixed(4)}`;
-  });
+  const cols=["cell_id","soil_status","soc_gkg","soc_stock_tc_ha","soc_source","npp_flux_tc_ha_yr","npp_source"];
+  const csv=[cols.join(","),...filtered().map(d=>cols.map(c=>d[c]??"").join(","))].join("\n");
   const a=Object.assign(document.createElement("a"),{
-    href:URL.createObjectURL(new Blob(["Cell,AGC,BGC,Total,NPP,SOC\n"+rows.join("\n")],{type:"text/csv"})),
-    download:"carbon_predictions.csv"
-  }); a.click();
-}
-
-// ── UTILITIES ────────────────────────────────────────────
-function countUp(id,target,dec=2,ms=1600){
-  const el=document.getElementById(id); if(!el) return;
-  let start=null;
-  const step=ts=>{
-    if(!start) start=ts;
-    const p=Math.min((ts-start)/ms,1);
-    el.textContent=(target*(1-Math.pow(1-p,4))).toFixed(dec);
-    if(p<1) requestAnimationFrame(step);
-  };
-  requestAnimationFrame(step);
-}
-function setTxt(id,v){ const e=document.getElementById(id); if(e&&v!=null) e.textContent=v; }
-function setBar(id,p){ const e=document.getElementById(id); if(e) e.style.width=Math.min(+p,100)+"%"; }
-function makeHist(vals,bins=8){
-  if(!vals.length) return{labels:[],counts:[]};
-  const mn=Math.min(...vals),mx=Math.max(...vals),st=(mx-mn)/bins||1;
-  const c=Array(bins).fill(0);
-  vals.forEach(v=>c[Math.min(Math.floor((v-mn)/st),bins-1)]++);
-  return{labels:c.map((_,i)=>(mn+i*st).toFixed(1)),counts:c};
+    href:URL.createObjectURL(new Blob([csv],{type:"text/csv"})),download:`ludhiana_cells_page${ePage}.csv`});
+  a.click();
 }
 
 // ── INIT ─────────────────────────────────────────────────
