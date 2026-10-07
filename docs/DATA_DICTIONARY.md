@@ -37,6 +37,8 @@ parameter.
 | File | Source | Licence | Area |
 |---|---|---|---|
 | `ludhiana_geoboundaries_adm2.geojson` | geoBoundaries gbOpen IND ADM2 | CC BY 4.0 | 369,961 ha (default) |
+| `punjab_state_geoboundaries_adm1.geojson` | geoBoundaries gbOpen IND ADM1 | CC BY 4.0 | location map only |
+| `punjab_districts_geoboundaries_adm2.geojson` | geoBoundaries gbOpen IND ADM2, 22 Punjab districts (pre-2021; no Malerkotla) | CC BY 4.0 | location map only |
 | `ludhiana_census2011_datameet.geojson` | Datameet Census 2011 districts | ODbL | 358,482 ha (sensitivity) |
 
 Both simplified at 0.0001° (~10 m); area change < 0.001%. Census 2011 reports 376,700 ha.

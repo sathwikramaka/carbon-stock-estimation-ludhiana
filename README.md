@@ -67,6 +67,7 @@ copy .env.example .env                                   # then edit if using da
 | 1 | `notebooks/01_data_audit.ipynb` | raw exports | `results/audit_findings.json`, figures |
 | 2 | `notebooks/02_carbon_pipeline.ipynb` | raw exports (or v2) | `results/` — every published number |
 | 3 (optional) | `notebooks/03_publish_databases.ipynb` | PostgreSQL/PostGIS, MongoDB | database copies of `results/` |
+| 4 | `notebooks/04_location_map.ipynb` | internet (first run) | `boundaries/punjab_*`, `results/fig_location.png` |
 
 Dashboard (no database needed):
 
