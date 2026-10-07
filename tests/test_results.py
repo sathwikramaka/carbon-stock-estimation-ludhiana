@@ -79,3 +79,9 @@ def test_no_keyless_google_tiles():
 def test_soil_area_is_a_census(summary):
     if summary["mode"] == "v1-interim":
         assert summary["soil"]["soil_area_ha"]["se"] == 0.0
+
+
+@needs_results
+def test_soil_density_is_a_stock_in_t_per_ha(summary):
+    """F14: SoilGrids ocs 0-30 cm is ~31 t/ha in Ludhiana. ~13 t/ha means SOC_mean was misread as SOC content."""
+    assert 20 < summary["soil"]["mean_density_tc_ha"]["estimate"] < 45

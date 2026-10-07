@@ -261,7 +261,7 @@ function showInfoPanel(lat,lng,features){
   setTxt("cip-dem",  p.dem!=null ? (+p.dem).toFixed(1)+" m" : "—");
   setTxt("cip-agri", p.agri===1 ? "Agricultural" : p.agri===0 ? "Non-agricultural" : "—");
   setTxt("cip-soil", p.soil_status||"—");
-  setTxt("cip-extra",`SOC ${fmt(p.soc_gkg,2)} g/kg (${p.soc_source||"—"}) · NPP ${p.npp_source||"—"} · BD ${fmt(p.bd,2)} g/cm³ · valid soil ${p.w_soil!=null?Math.round(p.w_soil*100)+"%":"—"}`);
+  setTxt("cip-extra",`SOC ${p.soc_gkg!=null?fmt(p.soc_gkg,2)+" g/kg":"content n/a"} (${p.soc_source||"—"}) · NPP ${p.npp_source||"—"} · BD ${fmt(p.bd,2)} g/cm³ · valid soil ${p.w_soil!=null?Math.round(p.w_soil*100)+"%":"—"}`);
 }
 
 function closeInfoPanel(){
@@ -555,7 +555,7 @@ async function loadModel(){
     setTxt(key+"-sd",`${exp.target_sd} ${unit}`);
     setTxt(key+"-note",`Beats coordinates alone by ${(rf.r2-co.r2).toFixed(3)} R². ${exp.validation}.`);
   };
-  card("soc",m.soc_experiment,"g/kg");
+  card("soc",m.soc_experiment,"t/ha");
   card("npp",m.npp_experiment,"gC/m²/yr");
 
   window._fi=(m.npp_experiment?.permutation_importance||[]).map(d=>({...d,type:d.feature.startsWith("NDVI")?"ndvi":"other"}));

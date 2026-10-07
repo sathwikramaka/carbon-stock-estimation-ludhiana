@@ -52,7 +52,8 @@ def test_carbon_paging_validation(client, q):
 def test_carbon_page(client):
     r = client.get("/api/carbon?page=2&per_page=25").get_json()
     assert len(r["records"]) == 25 and len({x["cell_id"] for x in r["records"]}) == 25
-    assert r["total"] == C.N_GRID_CELLS
+    summary = json.loads((C.RESULTS / "district_summary.json").read_text())
+    assert r["total"] == summary["grid"]["cells"]          # 66,700 in v1, 71,197 in v2
 
 
 def test_missing_results_returns_503(tmp_path):

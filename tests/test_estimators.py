@@ -47,9 +47,11 @@ def test_census_totals_area_weighting():
     cells = pd.DataFrame({
         "cell_area_ha": [10.0, 10.0, 10.0], "in_district_frac": [1.0, 0.5, 1.0],
         "soil_valid_frac": [1.0, 1.0, 0.0], "soc_030": [3.0, 3.0, np.nan], "bdod_030": [1.5, 1.5, np.nan],
+        "ocs_030_t_ha": [30.0, 30.0, np.nan],
         "cfvo_030": [0.0, 0.0, np.nan], "npp_gc_m2_yr": [100.0, -50.0, np.nan], "npp_valid_frac": [1.0, 1.0, 0.0]})
     t = E.census_totals(cells)
-    assert t["soil_stock_tc"] == pytest.approx(13.5 * 10 + 13.5 * 5)
+    assert t["soil_stock_tc"] == pytest.approx(30.0 * 10 + 30.0 * 5)          # ocs headline
+    assert t["soil_stock_computed_tc"] == pytest.approx(13.5 * 10 + 13.5 * 5)  # SOC x BD x 30 sensitivity
     assert t["soil_area_ha"] == pytest.approx(15.0)
     assert t["npp_flux_tc_yr"] == pytest.approx(1.0 * 10 - 0.5 * 5)      # negatives kept
 
