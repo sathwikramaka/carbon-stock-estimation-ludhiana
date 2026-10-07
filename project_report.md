@@ -82,7 +82,14 @@ case study in that risk.
 | Paddy 2024 | 256,600 ha at 7,014 kg/ha |
 | Wheat 2023-24 | 245,200 ha at about 5,000 kg/ha (in-season figure) |
 
-`[FILL IN: location map — district within Punjab and India]`
+![Location of Ludhiana District and coverage of the v1 grid](results/fig_location.png)
+
+*Figure 1.* Left: Ludhiana among Punjab's districts. Right: the two district
+boundaries used in v2 against the v1 export grid, which covers 93.0% of the
+geoBoundaries polygon and 96.2% of the Census 2011 polygon; the gaps are along
+the eastern and south-western edges. Boundaries: geoBoundaries gbOpen IND
+(CC BY 4.0) and Datameet (ODbL). Internal boundaries only; a published map of
+India's external border must follow the Survey of India depiction.
 
 ---
 
