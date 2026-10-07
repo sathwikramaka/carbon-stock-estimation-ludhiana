@@ -1,0 +1,98 @@
+[
+  {
+    "month": "Jun 24",
+    "sort_order": 0,
+    "season": "Kharif",
+    "median_ndvi": 0.1749,
+    "cells_with_value": 62431,
+    "missing_share": 0.064
+  },
+  {
+    "month": "Jul 24",
+    "sort_order": 1,
+    "season": "Kharif",
+    "median_ndvi": 0.2458,
+    "cells_with_value": 58986,
+    "missing_share": 0.1157
+  },
+  {
+    "month": "Aug 24",
+    "sort_order": 2,
+    "season": "Kharif",
+    "median_ndvi": 0.7542,
+    "cells_with_value": 32303,
+    "missing_share": 0.5157
+  },
+  {
+    "month": "Sep 24",
+    "sort_order": 3,
+    "season": "Kharif",
+    "median_ndvi": 0.712,
+    "cells_with_value": 62431,
+    "missing_share": 0.064
+  },
+  {
+    "month": "Oct 24",
+    "sort_order": 4,
+    "season": "Kharif",
+    "median_ndvi": 0.4691,
+    "cells_with_value": 62431,
+    "missing_share": 0.064
+  },
+  {
+    "month": "Nov 24",
+    "sort_order": 5,
+    "season": "Rabi",
+    "median_ndvi": 0.1931,
+    "cells_with_value": 62431,
+    "missing_share": 0.064
+  },
+  {
+    "month": "Dec 24",
+    "sort_order": 6,
+    "season": "Rabi",
+    "median_ndvi": 0.3374,
+    "cells_with_value": 62431,
+    "missing_share": 0.064
+  },
+  {
+    "month": "Jan 25",
+    "sort_order": 7,
+    "season": "Rabi",
+    "median_ndvi": 0.5574,
+    "cells_with_value": 62431,
+    "missing_share": 0.064
+  },
+  {
+    "month": "Feb 25",
+    "sort_order": 8,
+    "season": "Rabi",
+    "median_ndvi": 0.7128,
+    "cells_with_value": 62431,
+    "missing_share": 0.064
+  },
+  {
+    "month": "Mar 25",
+    "sort_order": 9,
+    "season": "Rabi",
+    "median_ndvi": 0.6627,
+    "cells_with_value": 62431,
+    "missing_share": 0.064
+  },
+  {
+    "month": "Apr 25",
+    "sort_order": 10,
+    "season": "Rabi",
+    "median_ndvi": 0.3117,
+    "cells_with_value": 62431,
+    "missing_share": 0.064
+  },
+  {
+    "month": "May 25",
+    "sort_order": 11,
+    "season": "Fallow",
+    "median_ndvi": 0.2165,
+    "cells_with_value": 62431,
+    "missing_share": 0.064
+  }
+]

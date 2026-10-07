@@ -1,290 +1,106 @@
-# Carbon Stock Estimation — Ludhiana District, Punjab
+# Ludhiana Carbon Indicators
 
-Grid-based estimation of soil organic carbon and above-ground carbon
-assimilation across Ludhiana District using MODIS satellite imagery, SoilGrids
-soil data, and Random Forest regression at 250 m resolution — with a Flask API,
-PostGIS spatial database, MongoDB document store, and an interactive dashboard.
+Soil organic carbon stock (0–30 cm) and annual net primary production for
+Ludhiana District, Punjab, on a 250 m grid — with uncertainty, an independent
+cross-check, and a dashboard that serves exactly what the analysis produced.
 
-Academic project, Indian Institute of Remote Sensing (IIRS) — Big Data
-Analytics.
-
----
+> **Status: provisional (v1 interim).** The figures below come from the
+> existing Earth Engine exports after repairing their known defects
+> ([AUDIT.md](AUDIT.md)). Running `notebooks/00_gee_extraction.ipynb` replaces
+> them with a census from clean inputs.
 
 ## Results
 
-| Quantity | Value |
-|---|---|
-| **Soil organic carbon stock (0–30 cm)** | **5.087 MtC** |
-| CO₂ equivalent | 18.65 Mt CO₂e |
-| Mean soil carbon density | 12.61 tC/ha |
-| Annual above-ground carbon assimilation | 4.332 MtC/yr |
-| Grid cells analysed | 64,545 |
-| Grid resolution | 250 m × 250 m (6.25 ha per cell) |
-| Grid area | 403,406 ha |
-| Area-corrected to official boundary | 4.750 MtC |
-
-**The two carbon figures are reported separately and are not summed.** Soil
-organic carbon is a *stock*, accumulated over decades and measured in tonnes.
-Net primary productivity is a *flux*, describing carbon fixed in one year and
-measured in tonnes per year. Adding them would combine different units and
-different time dimensions. In an annual cropping system the distinction matters
-particularly, since above-ground biomass is harvested each season and standing
-above-ground carbon is close to zero for most of the year.
-
----
-
-## Model performance
-
-Two validation schemes are reported, because random splitting proved optimistic
-on spatially autocorrelated data.
-
-| Model | Random split R² | Spatial block CV R² |
+| Quantity | Estimate | Uncertainty |
 |---|---|---|
-| Below-ground (SOC) | 0.9665 | **0.9481** |
-| Above-ground (NPP) | 0.5426 | **0.4028** |
+| Soil organic carbon stock, 0–30 cm | **4.549 MtC** | 95% CI 4.546–4.552 (sampling only) |
+| Mean SOC density over mapped soil (329,814 ha, a census) | **13.79 tC/ha** | 95% CI 13.78–13.80 |
+| MOD17 net primary production, as the product reports | **0.295 MtC/yr** | 95% CI 0.290–0.300 |
+| Rice + wheat NPP from reported yields (lower bound) | **3.34 MtC/yr** | 90% range 2.70–4.07 |
 
-> **A note on the below-ground R².** The SOC target is SoilGrids-derived, and
-> several predictors — sand, clay, bulk density — are also SoilGrids layers.
-> Their mutual correlations run 0.84–0.97, and two are physically inverted: sand
-> and clay correlate +0.84 where competing texture fractions should oppose one
-> another, and bulk density correlates +0.97 with organic carbon where added
-> organic matter should reduce it through greater pore space. The 0.9481
-> therefore measures how well the model reproduces the SoilGrids surface, not how
-> well it predicts measured soil carbon. It is a reproducibility check on a
-> gridded product, not a validated soil prediction. The above-ground NPP model,
-> whose target is independent of its predictors, is the honest indication of
-> predictive skill at 0.4028. Independent field measurements would be required to
-> validate the SOC model.
+- The stock and the flux have different dimensions and are never summed.
+- The intervals cover sampling error only. They exclude known biases (unrecorded
+  SoilGrids depth interval, no coarse-fragment correction, a grid covering ~95%
+  of the district) and SoilGrids' own prediction uncertainty, which is larger.
+- MOD17 captures about 9% of the carbon that demonstrably passes through the
+  district's crops and reports negative annual NPP in a fifth of agricultural
+  cells. It is not fit for crop carbon flux here (AUDIT.md, F4).
+- None of this is a carbon-credit quantity: no baseline, additionality,
+  permanence or field verification. For cropland soil carbon credits the
+  relevant Verra methodology is VM0042 (Improved Agricultural Land Management).
 
-A random 80/20 split places adjacent 250 m cells in both training and test sets.
-Because neighbouring cells are strongly correlated, the model can retrieve an
-answer it has already seen. Spatial block cross-validation partitions the
-district into an 8 × 8 geographic grid and holds out whole blocks. **The spatial
-CV figures are the defensible measures of predictive skill** — subject to the
-provenance caveat above for the below-ground model.
+## How the numbers are made
 
----
+1. **Every cell is kept and keyed by its position.** The 66,700-cell grid is a
+   regular lattice; `cell_id = r{row}_c{col}` is unique and reproducible in
+   Earth Engine. (The old `Grid_ID` was a random number with 2,155 collisions.)
+2. **Soil values are repaired, not modelled.** The original export averaged
+   masked SoilGrids pixels as zeros. Bulk density reveals each cell's valid
+   fraction *w*; diluted values are divided by *w*, and cells with no valid
+   soil are reported as no-data.
+3. **District totals come from survey estimators, not a predictive model.** The
+   20,000-cell training file passes every balance check for a simple random
+   sample of the grid. Bulk density exists for every cell, so the mapped soil
+   area is known exactly; the SOC total is the sample's stock density (ratio
+   estimator) times that area.
+4. **MOD17 is converted per its specification** (DN × 0.0001 kgC/m²) and checked
+   against crop yields converted with IPCC (2019) factors.
+5. **The map** fills the 46,700 unsampled cells by inverse-distance
+   interpolation, checked by cross-validation (SOC R² 0.81). Every value is
+   labelled `observed`, `interpolated` or `no soil data`.
+6. **Machine learning is reported as a methods result** — random forest under
+   spatial-block cross-validation against coordinates-only and mean baselines —
+   and produces no published number. On clean data it barely beats position
+   alone (SOC R² 0.20 vs 0.17; NPP 0.34 vs 0.32).
 
-## Method
-
-### Data sources
-
-| Layer | Source | Role |
-|---|---|---|
-| Net primary productivity | MODIS | Above-ground target |
-| Soil organic carbon, texture, bulk density | SoilGrids | Below-ground target and predictors |
-| NDVI, 12 monthly composites | Google Earth Engine | Above-ground predictors |
-| Elevation, slope | SRTM-derived | Both models |
-| Land surface temperature, precipitation | Gridded climate products | Above-ground predictors |
-
-All layers extracted through Google Earth Engine over a 250 m grid covering the
-district.
-
-### Carbon equations
-
-```
-Soil organic carbon (tC/ha) = SOC (g/kg) × bulk density (g/cm³) × depth (cm) / 10
-Above-ground assimilation (tC/ha/yr) = NPP (gC/m²/yr) / 100
-```
-
-The soil equation follows IPCC Tier 1 convention for the 0–30 cm layer. MODIS
-NPP is already expressed in grams of carbon, so no biomass-to-carbon fraction is
-applied.
-
-### Modelling
-
-Random Forest and gradient boosting were trained on a 20,000-cell sample and
-applied to all 64,545 cells. Random Forest performed better for both targets and
-is used for the reported results.
-
----
-
-## Validation and corrections
-
-Three substantive corrections were made during validation. All are documented
-rather than silently applied, and each reduced the headline figure.
-
-### 1. Unit scaling error in soil organic carbon
-
-Input variables were audited against published physical ranges for Punjab
-agricultural soils. SoilGrids reports organic carbon in dg/kg, bulk density in
-cg/cm³, and texture in g/kg. Three of the four bands had been rescaled during the
-Earth Engine export; organic carbon had not.
-
-| Variable | Native unit | As extracted | Rescaled during export |
-|---|---|---|---|
-| Bulk density | cg/cm³ | 1.38 g/cm³ | Yes (÷100) |
-| Sand | g/kg | 34.3% | Yes (÷10) |
-| Clay | g/kg | 25.8% | Yes (÷10) |
-| **Organic carbon** | **dg/kg** | **28.33** | **No** |
-
-Uncorrected, this produced a soil carbon density of 126.1 tC/ha — roughly five
-times the upper end of published values, implying 2.8% soil organic carbon in
-soils documented at 0.2–0.6%. Applying the correction reduced the soil carbon
-estimate from 50.87 MtC to 5.087 MtC.
-
-Model R² values were unchanged by the correction, confirming a pure rescaling.
-
-### 2. Spatial cross-validation
-
-Random splitting was replaced with spatial block cross-validation, reducing
-reported above-ground R² from 0.5426 to 0.4028 and below-ground from 0.9665 to
-0.9481.
-
-### 3. Separation of flux from stock
-
-The above-ground NPP figure was previously summed with soil carbon to give a
-combined total. This was replaced with separate reporting, for the reasons given
-above.
-
-### Coordinate proxy analysis
-
-Each predictor was tested by fitting it from longitude and latitude alone. Four
-climate covariates proved almost perfectly reconstructible from position:
-
-| Feature | R² from coordinates alone |
-|---|---|
-| LST_Sept20 | 0.9998 |
-| Kharif_Pre | 0.9998 |
-| Rabi_Preci | 0.9997 |
-| Rabi_LST_2 | 0.9608 |
-
-These are interpolated surfaces from products substantially coarser than the
-250 m analysis grid. Rabi precipitation ranks highest in permutation importance
-(0.348) not because winter rainfall drives productivity in an irrigated system,
-but because the rainfall surface correlates 0.879 with longitude while NPP
-correlates 0.633 with longitude. The model tracks a district-wide east–west
-gradient.
-
-A model excluding all four proxies scored 0.3685 under spatial CV, below the full
-model's 0.4028 but above a coordinates-only baseline of 0.3185 — demonstrating
-that the retained NDVI and terrain features carry genuine local information.
-
-Feature importance is reported as permutation importance on held-out data rather
-than impurity importance, which favours continuous predictors with many split
-points.
-
----
-
-## Limitations
-
-1. **Shared provenance in soil data.** As stated alongside the model performance
-   table: the SOC target and several predictors are layers of one gridded
-   product. Their mutual correlations run 0.84–0.97 with two physically inverted
-   signs. The below-ground R² measures agreement within that product, not
-   accuracy against field measurement. An ablation test confirmed the predictors
-   are largely interchangeable — removing bulk density entirely changes R² by
-   0.007.
-
-2. **No field validation.** No independent soil samples were available. The
-   estimate is a remote-sensing inventory, not a measured one.
-
-3. **Depth restriction.** 0–30 cm only. Total profile carbon would be higher.
-
-4. **Grid overruns the district boundary** by 7.1% (403,406 ha against an
-   official 376,700 ha). Area-corrected soil carbon is 4.750 MtC.
-
-5. **Climate covariates are position proxies** at 250 m resolution, as
-   documented above.
-
-6. **NDVI gaps.** NDVI_Aug24 is missing for 49% of cells due to monsoon cloud,
-   filled with monthly medians.
-
-7. **Duplicate grid identifiers.** The export contained 66,790 rows but 64,545
-   unique cells; duplicates resolved by retaining the highest agricultural
-   fraction per cell. Filenames retain the 66790 label for continuity.
-
-8. **Above-ground is a flux.** A true above-ground biomass stock would require
-   allometric, canopy-height, radar, or dedicated biomass products such as GEDI
-   or ESA CCI Biomass.
-
-9. **Prediction where direct extraction was possible.** Both SoilGrids and MODIS
-   NPP have global coverage. Extracting them directly for all 64,545 cells would
-   remove the prediction step and its uncertainty. The machine-learning component
-   demonstrates the modelling workflow required by this project; it is not the
-   most accurate route to the carbon figures themselves.
-
----
-
-## Stack
-
-**Analysis** — Python, scikit-learn, pandas, Google Earth Engine
-**Databases** — PostgreSQL + PostGIS (geometry), MongoDB (predictions)
-**Backend** — Flask, psycopg2, pymongo
-**Frontend** — Leaflet, Chart.js
-
----
-
-## Repository layout
-
-```
-IIRS/
-  Carbon_Stocks/
-    carbon_project/
-      backend/          Flask API
-      frontend/         dashboard
-    *.csv               inputs and outputs
-    *.pkl               trained models
-    *_report.txt        diagnostic reports
-  Scrpit/
-    carbon_stock_pipeline.ipynb
-model_diagnostics.py      validation scheme comparison
-deep_diagnostics.py       soil provenance and spatial proxy tests
-rebuild_honest_models.py  proxy-excluded sensitivity models
-units_audit.py            input unit audit against published ranges
-update_website_metrics.py publishes validated metrics to the databases
-```
-
----
-
-## Running it
+## Run it
 
 ```bash
-python -m venv .venv
-.venv\Scripts\activate          # Windows
-pip install -r requirements.txt
+python -m venv .venv && .venv\Scripts\activate          # Windows
+pip install -r requirements-dev.txt
+copy .env.example .env                                   # then edit if using databases
 ```
 
-Create a `.env` file in the project root:
+| Step | Notebook | Needs | Writes |
+|---|---|---|---|
+| 0 | `notebooks/00_gee_extraction.ipynb` | Earth Engine project `my-projects-510917` | `IIRS/Carbon_Stocks/v2/` clean inputs |
+| 1 | `notebooks/01_data_audit.ipynb` | raw exports | `results/audit_findings.json`, figures |
+| 2 | `notebooks/02_carbon_pipeline.ipynb` | raw exports (or v2) | `results/` — every published number |
+| 3 (optional) | `notebooks/03_publish_databases.ipynb` | PostgreSQL/PostGIS, MongoDB | database copies of `results/` |
 
-```
-PROJECT_ROOT=<absolute path to this folder>
-DB_MODE=local
-MONGO_URI=mongodb://localhost:27017/
-MONGO_DB=carbon_stock_ludhiana
-PG_HOST=localhost
-PG_PORT=5432
-PG_DB=postgres
-PG_USER=postgres
-PG_PASSWORD=<your password>
-```
-
-Run the notebook `IIRS/Scrpit/carbon_stock_pipeline.ipynb` steps 1–10, then:
+Dashboard (no database needed):
 
 ```bash
 cd IIRS/Carbon_Stocks/carbon_project/backend
-python app.py
+python app.py                      # http://localhost:5000
 ```
 
-Dashboard at `http://localhost:5000`. Health check at `/api/health`.
+`DB_MODE` in `.env` selects `files` (default, reads `results/`), `local`
+(PostgreSQL + MongoDB) or `cloud` (Supabase + Atlas). Database modes fall back
+to the files if a database is unreachable, and every response says which
+source it used.
 
-`DB_MODE=cloud` switches to Supabase and MongoDB Atlas using the corresponding
-`.env` variables.
+Tests: `pytest tests/` (44 tests; those needing `results/carbon_cells.csv` skip
+until the pipeline has run).
 
----
+## Layout
 
-## Further work
+```
+config.py                  constants, cell key, soil QC, loaders
+estimators.py              survey estimators, interpolation, crop NPP, census totals
+notebooks/                 00 extraction · 01 audit · 02 pipeline · 03 publish
+results/                   pipeline outputs (the only source the dashboard reads)
+IIRS/Carbon_Stocks/        raw Earth Engine exports (v1), boundaries/, and v2/ after re-extraction
+IIRS/Carbon_Stocks/carbon_project/   Flask backend + Leaflet/Chart.js frontend
+tests/                     invariants for keys, units, QC, estimators, results, API
+docs/DATA_DICTIONARY.md    every column, its unit and provenance
+AUDIT.md                   every defect found, evidence, fix, status
+project_report.md          the written report
+archive/                   superseded scripts, documents and outputs (history only)
+```
 
-- Field soil sampling to calibrate the gridded soil product — the single change
-  that would convert the below-ground figure from product agreement into
-  validated prediction
-- Direct extraction of SOC and NPP for all cells rather than prediction
-- Clipping the grid to the official district boundary
-- Above-ground biomass estimation to replace the NPP proxy
-- Spatial cross-validation adopted from the outset
+## Data sources
 
----
-
-## Licence
-
-MIT
+ISRIC SoilGrids 2.0 · MODIS MOD17A3HGF v6.1 · SRTM · Sentinel-2 (v2 NDVI) ·
+ESA WorldCover 2021 (v2) · basemaps © Esri, © OpenStreetMap contributors, © CARTO · district crop statistics as reported by the Ludhiana
+agriculture department · IPCC (2019) Refinement, Vol. 4, Table 11.1a.

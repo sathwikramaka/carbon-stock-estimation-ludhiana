@@ -1,0 +1,188 @@
+{
+  "mode": "v1-interim",
+  "run_date": "2026-10-07",
+  "interpolation": {
+    "soc_gkg": {
+      "r2": 0.8079446167215786,
+      "rmse": 0.08350261001777992,
+      "mae": 0.058992325470046444,
+      "bias": -0.0009672742341606201,
+      "n": 18522,
+      "k": 8,
+      "power": 2.0,
+      "folds": 5
+    },
+    "npp_gc_m2_yr": {
+      "r2": 0.5977687103111167,
+      "rmse": 77.62019211239179,
+      "mae": 51.70949209119609,
+      "bias": 0.02304175368104549,
+      "n": 17038,
+      "k": 8,
+      "power": 2.0,
+      "folds": 5
+    }
+  },
+  "soc_experiment": {
+    "n": 17691,
+    "target_sd": 0.1872,
+    "validation": "5-fold GroupKFold over 8x8 geographic blocks",
+    "models": [
+      {
+        "model": "Random forest",
+        "r2": 0.2,
+        "rmse": 0.1674,
+        "mae": 0.1277
+      },
+      {
+        "model": "Coordinates only",
+        "r2": 0.1726,
+        "rmse": 0.1703,
+        "mae": 0.1283
+      },
+      {
+        "model": "Training mean",
+        "r2": -0.0061,
+        "rmse": 0.1878,
+        "mae": 0.1438
+      }
+    ],
+    "permutation_importance": [
+      {
+        "feature": "bd_rec",
+        "importance": 0.2081
+      },
+      {
+        "feature": "DEM_mean",
+        "importance": 0.1459
+      },
+      {
+        "feature": "sand_rec",
+        "importance": 0.1444
+      },
+      {
+        "feature": "clay_rec",
+        "importance": 0.1264
+      },
+      {
+        "feature": "Slope_mean",
+        "importance": 0.0528
+      },
+      {
+        "feature": "agri_class",
+        "importance": 0.0125
+      }
+    ],
+    "unit": "g/kg"
+  },
+  "npp_experiment": {
+    "n": 17038,
+    "target_sd": 122.3874,
+    "validation": "5-fold GroupKFold over 8x8 geographic blocks",
+    "models": [
+      {
+        "model": "Random forest",
+        "r2": 0.3388,
+        "rmse": 99.5158,
+        "mae": 78.6874
+      },
+      {
+        "model": "Coordinates only",
+        "r2": 0.3184,
+        "rmse": 101.0448,
+        "mae": 78.2218
+      },
+      {
+        "model": "Training mean",
+        "r2": -0.0139,
+        "rmse": 123.2355,
+        "mae": 94.4833
+      }
+    ],
+    "permutation_importance": [
+      {
+        "feature": "DEM_mean",
+        "importance": 0.339
+      },
+      {
+        "feature": "NDVI_Aug24",
+        "importance": 0.0923
+      },
+      {
+        "feature": "Slope_mean",
+        "importance": 0.0702
+      },
+      {
+        "feature": "NDVI_Oct24",
+        "importance": 0.0335
+      },
+      {
+        "feature": "Kharif_Lud",
+        "importance": 0.0211
+      },
+      {
+        "feature": "NDVI_Jul24",
+        "importance": 0.0062
+      },
+      {
+        "feature": "NDVI_Jun24",
+        "importance": 0.0035
+      },
+      {
+        "feature": "NDVI_Jan25",
+        "importance": 0.0033
+      },
+      {
+        "feature": "NDVI_Apr25",
+        "importance": 0.0026
+      },
+      {
+        "feature": "NDVI_May25",
+        "importance": 0.0018
+      },
+      {
+        "feature": "NDVI_Mar25",
+        "importance": 0.001
+      },
+      {
+        "feature": "NDWI_Rabi_",
+        "importance": 0.001
+      },
+      {
+        "feature": "NDVI_Sep24",
+        "importance": 0.0006
+      },
+      {
+        "feature": "agri_class",
+        "importance": 0.0
+      },
+      {
+        "feature": "NDVI_Nov24",
+        "importance": -0.0002
+      },
+      {
+        "feature": "NDVI_Dec24",
+        "importance": -0.0003
+      },
+      {
+        "feature": "NDVI_Feb25",
+        "importance": -0.0009
+      },
+      {
+        "feature": "Rabi_Peak_",
+        "importance": -0.0013
+      },
+      {
+        "feature": "Kharif_pea",
+        "importance": -0.0015
+      }
+    ],
+    "unit": "gC/m2/yr",
+    "excluded_position_proxies": [
+      "Kharif_Pre",
+      "LST_Sept20",
+      "Rabi_Preci",
+      "Rabi_LST_2"
+    ]
+  }
+}

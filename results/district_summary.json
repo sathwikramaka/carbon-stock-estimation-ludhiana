@@ -1,0 +1,249 @@
+{
+  "mode": "v1-interim",
+  "run_date": "2026-10-07",
+  "status": "provisional",
+  "district": "Ludhiana, Punjab, India",
+  "grid": {
+    "cells": 66700,
+    "area_ha": 356893.9,
+    "official_area_ha": 376700,
+    "coverage_of_official_area": 0.9474,
+    "sampled_cells": 20000,
+    "agri_cells": 54269
+  },
+  "soil": {
+    "stock_mtc": {
+      "estimate": 4.5488,
+      "se": 0.0017,
+      "ci95": [
+        4.5455,
+        4.552
+      ],
+      "n": 20000
+    },
+    "soil_area_ha": {
+      "estimate": 329814,
+      "se": 0.0,
+      "ci95": null,
+      "n": 66700,
+      "note": "census of every cell"
+    },
+    "mean_density_tc_ha": {
+      "estimate": 13.792,
+      "se": 0.005,
+      "ci95": [
+        13.782,
+        13.802
+      ],
+      "n": 20000
+    },
+    "depth_cm": 30,
+    "cells": {
+      "full": 59089,
+      "partial": 4958,
+      "nodata": 2653
+    },
+    "nodata_non_agricultural_share": 0.983,
+    "method": "Ratio estimator from a random sample of 20,000 of 66,700 cells times the census soil area; diluted soil values repaired by value / w",
+    "interval_covers": "sampling error only; see caveats for known biases that are not in the interval",
+    "sensitivity": [
+      {
+        "variant": "Headline: ratio estimator x known soil area, all diluted cells repaired",
+        "estimate": 4.5488,
+        "se": 0.0017,
+        "ci95": [
+          4.5455,
+          4.552
+        ],
+        "n": 20000
+      },
+      {
+        "variant": "Expansion estimator (ignores the known soil area)",
+        "estimate": 4.5454,
+        "se": 0.0072,
+        "ci95": [
+          4.5312,
+          4.5596
+        ],
+        "n": 20000
+      },
+      {
+        "variant": "Only partial cells with w >= 0.5 repaired, rest dropped",
+        "estimate": 4.5055,
+        "se": 0.0079,
+        "ci95": [
+          4.4899,
+          4.5211
+        ],
+        "n": 20000
+      },
+      {
+        "variant": "All partially diluted cells dropped",
+        "estimate": 4.3622,
+        "se": 0.0095,
+        "ci95": [
+          4.3436,
+          4.3807
+        ],
+        "n": 20000
+      },
+      {
+        "variant": "No quality control (zeros averaged in, as in v1)",
+        "estimate": 4.4833,
+        "se": 0.008,
+        "ci95": [
+          4.4677,
+          4.4989
+        ],
+        "n": 20000
+      }
+    ]
+  },
+  "npp": {
+    "flux_mtc_per_year": {
+      "estimate": 0.2952,
+      "se": 0.0025,
+      "ci95": [
+        0.2903,
+        0.3001
+      ],
+      "n": 20000
+    },
+    "domain_area_ha": {
+      "estimate": 304063.0,
+      "se": 750.0,
+      "ci95": [
+        302592.0,
+        305533.0
+      ],
+      "n": 20000
+    },
+    "mean_rate_tc_ha_yr": {
+      "estimate": 0.971,
+      "se": 0.008,
+      "ci95": [
+        0.956,
+        0.986
+      ],
+      "n": 20000
+    },
+    "mean_rate_agricultural_tc_ha_yr": 0.946,
+    "negative_share_agricultural": 0.198,
+    "conversion": "NPP flux (tC/ha/yr) = MOD17 DN x 0.0001 kgC/m2 x 10 = DN / 1000",
+    "method": "Expansion estimator from the same random sample; MOD17 DN scaled per product specification",
+    "sensitivity": [
+      {
+        "variant": "Headline: DN / 1000, negatives kept",
+        "estimate": 0.2952,
+        "se": 0.0025,
+        "ci95": [
+          0.2903,
+          0.3001
+        ],
+        "n": 20000
+      },
+      {
+        "variant": "Negatives clipped to zero",
+        "estimate": 0.361,
+        "se": 0.0018,
+        "ci95": [
+          0.3574,
+          0.3646
+        ],
+        "n": 20000
+      },
+      {
+        "variant": "Agricultural cells only",
+        "estimate": 0.2651,
+        "se": 0.0025,
+        "ci95": [
+          0.2603,
+          0.27
+        ],
+        "n": 20000
+      },
+      {
+        "variant": "Old conversion DN / 100 (wrong by 10x), negatives clipped",
+        "estimate": 3.61,
+        "se": 0.0183,
+        "ci95": [
+          3.5741,
+          3.6459
+        ],
+        "n": 20000
+      }
+    ]
+  },
+  "crop_yield_crosscheck": {
+    "total_mtc_median": 3.3360016595439093,
+    "total_mtc_p05_p95": [
+      2.7049946217867977,
+      4.067613507180817
+    ],
+    "per_crop": {
+      "wheat": {
+        "tc_ha_median": 5.5454298195703196,
+        "tc_ha_p05_p95": [
+          4.0983778478683295,
+          7.258357768709434
+        ]
+      },
+      "rice": {
+        "tc_ha_median": 7.656463321281429,
+        "tc_ha_p05_p95": [
+          5.72405711106966,
+          9.974211661898435
+        ]
+      }
+    },
+    "draws": 20000,
+    "mod17_over_crop_ratio": 0.088,
+    "crop_tc_ha_yr_double_cropped": 13.2,
+    "mod17_agricultural_tc_ha_yr": 0.946,
+    "comparability_note": "MOD17 is totalled over the grid's product domain (the grid covers ~95% of the district) while crop areas are district-wide; the MOD17 year in v1 is unrecorded while yields are 2023-24 (wheat) and 2024 (paddy). Neither changes the order-of-magnitude gap.",
+    "inputs": {
+      "wheat": {
+        "area_ha": 245200,
+        "yield_t_ha": 5.0,
+        "yield_rel_sd": 0.1,
+        "dry_frac": 0.89,
+        "residue_ratio": 1.3,
+        "residue_rel_sd": 0.2,
+        "root_shoot": 0.23,
+        "root_shoot_rel_sd": 0.41
+      },
+      "rice": {
+        "area_ha": 256600,
+        "yield_t_ha": 7.014,
+        "yield_rel_sd": 0.1,
+        "dry_frac": 0.89,
+        "residue_ratio": 1.4,
+        "residue_rel_sd": 0.2,
+        "root_shoot": 0.16,
+        "root_shoot_rel_sd": 0.35
+      }
+    }
+  },
+  "formulas": {
+    "soil": "SOC stock (tC/ha) = SOC (g/kg) x BD (g/cm3) x 30 cm / 10",
+    "npp": "NPP flux (tC/ha/yr) = MOD17 DN x 0.0001 kgC/m2 x 10 = DN / 1000"
+  },
+  "previous_published": {
+    "soil_stock_mtc": 4.3554,
+    "npp_flux_mtc_per_year": 3.7085,
+    "soc_r2_spatial": 0.9492,
+    "npp_r2_spatial": 0.4226,
+    "cells": 64545,
+    "why_superseded": "SOC model learned unmasked-nodata dilution; MOD17 scale factor skipped; 2,155 real cells deleted by Grid_ID de-duplication"
+  },
+  "caveats": [
+    "The confidence intervals cover sampling error only. Known biases outside them: unrecorded SoilGrids depth interval, no coarse-fragment correction, grid covering about 95% of the district, and cells with BD 1.40-1.50 treated as undiluted.",
+    "SOC values are SoilGrids 2.0 model predictions, not field measurements; SoilGrids' own uncertainty is not yet propagated (quantile layers are not on Earth Engine).",
+    "The depth interval behind the v1 SOC export is not recorded; v2 uses a thickness-weighted 0-30 cm.",
+    "Coarse fragments are not removed in v1 (v2 removes them using SoilGrids cfvo).",
+    "The grid covers 94.7% of the Census 2011 district area and is not clipped to an official boundary.",
+    "MOD17 NPP captures about 9% of the crop-yield lower bound and is negative in about a fifth of agricultural cells; it is not fit for crop carbon flux here.",
+    "Soil stock (tC) and NPP flux (tC/yr) have different dimensions and are never summed.",
+    "Neither figure is a carbon-credit quantity: no baseline, additionality, permanence or field verification."
+  ]
+}
