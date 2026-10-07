@@ -6,9 +6,9 @@
 Sathwik Ramaka · M.Sc. Agriculture Analytics · Indian Institute of Remote Sensing (IIRS), Dehradun
 `[FILL IN: supervisor, submission date, institutional formatting]`
 
-> Status: v1 interim results. All figures are produced by
-> `notebooks/02_carbon_pipeline.ipynb` and can be regenerated from the
-> repository. Section 9 states what changes after the planned re-extraction.
+> Status: v2 census results from a fresh Earth Engine extraction (7 October
+> 2026). All figures are produced by `notebooks/02_carbon_pipeline.ipynb` and
+> can be regenerated from the repository.
 
 ---
 
@@ -26,16 +26,21 @@ a random forest to report a spatial cross-validated R² of 0.949. Rebuilt, the
 same model scores 0.955 with the diluted cells and 0.191 without them, barely
 above a model given only coordinates.
 
-Because the 20,000-cell training file behaves in every check as a simple random
-sample of the grid, district totals were re-estimated without a predictive
-model, using design-based estimators on repaired soil values. The SOC stock is
-**4.549 MtC** (95% CI 4.546–4.552, sampling error only), a mean of 13.79 tC/ha
-over 329,814 ha of mapped soil. Correctly scaled MOD17 NPP is **0.295 MtC/yr**, which is 8.8% of
-an independent lower bound of **3.34 MtC/yr** (90% range 2.70–4.07) computed
-from reported rice and wheat yields; MOD17 also reports negative annual NPP in
-19.8% of agricultural cells, so it is not fit for crop carbon flux in this
-landscape. The results are served by a Flask/PostGIS/MongoDB dashboard that
-reads only what the pipeline writes.
+The audit also found that the soil column every earlier analysis treated as
+SOC content was in fact SoilGrids' 0–30 cm organic carbon *stock* (t/ha), so
+multiplying it by bulk density and depth had understated the stock about
+2.3-fold. All layers were then re-extracted from Earth Engine with masking
+applied before reduction, over 71,197 cells clipped to the district boundary.
+The 0–30 cm SOC stock is **10.54 MtC**, a mean of 30.77 tC/ha over 342,426 ha
+of valid soil; the Census 2011 boundary gives 10.18 MtC, and an independent
+design-based estimate from the repaired v1 sample gives 10.12 MtC (95% CI
+10.11–10.12) over the smaller v1 grid. Rebuilding the stock from SoilGrids'
+SOC and bulk density layers instead gives 14.46 MtC, a 1.35-fold model
+disagreement that no sampling interval captures. Correctly scaled MOD17 NPP for
+2024 is **0.335 MtC/yr**, 10% of an independent lower bound of **3.34 MtC/yr**
+(90% range 2.70–4.07) computed from reported rice and wheat yields, so MOD17 is
+not fit for crop carbon flux in this landscape. The results are served by a
+Flask/PostGIS/MongoDB dashboard that reads only what the pipeline writes.
 
 **Keywords:** soil organic carbon, SoilGrids, MOD17, Google Earth Engine,
 design-based estimation, spatial cross-validation, data provenance, Punjab
@@ -99,18 +104,21 @@ India's external border must follow the Survey of India depiction.
 
 | Layer | Source | Stored unit | Role |
 |---|---|---|---|
-| Soil organic carbon | ISRIC SoilGrids 2.0 `soc` | dg/kg | stock |
+| Soil organic carbon stock 0–30 cm (v1 column `SOC_mean`) | ISRIC SoilGrids 2.0 `ocs` | t/ha | stock (Section 4.5) |
 | Bulk density | SoilGrids `bdod` (rescaled in export) | g/cm³ | stock; dilution diagnostic |
 | Sand, clay | SoilGrids (rescaled in export) | % | model experiment |
 | Net primary production | MODIS MOD17A3HGF v6.1 `Npp` | DN (× 0.0001 kgC/m²) | flux |
 | Elevation, slope | SRTM | m, degrees | model experiment |
-| Monthly NDVI, Jun 2024 – May 2025 | `[sensor not recorded in v1]` | index | model experiment |
+| Monthly NDVI, Jun 2024 – May 2025 | `[sensor not recorded in v1]`; Sentinel-2 SR in v2 | index | model experiment |
 | Seasonal rainfall, land-surface temperature | `[not recorded]` | mm, °C | excluded (Section 6.4) |
 | Agricultural class and fraction | `[not recorded]` | 0/1, fraction | reporting |
 
 The original extraction script was not preserved, so provenance for v1 inputs
-was reconstructed from the data (`docs/DATA_DICTIONARY.md`). A replacement
-extraction notebook now documents every asset and parameter (Section 9).
+was reconstructed from the data (`docs/DATA_DICTIONARY.md`). The v2 extraction
+(Section 5.7) documents every asset and parameter in a manifest. v2 adds
+SoilGrids `soc`, `bdod`, `sand`, `clay`, `cfvo` and `ocs`; MOD17A3HGF 2024; ESA
+WorldCover 2021; SRTM; and Sentinel-2 monthly NDVI with clear-observation
+counts.
 
 ### 3.2 Structure of the exports
 
@@ -205,8 +213,23 @@ NPP flux (tC/ha/yr) = DN × 0.0001 kgC/m² × 10 = DN / 1000
 - **Position proxies.** Seasonal rainfall and land-surface temperature are
   reconstructible from longitude and latitude with R² ≥ 0.98; they are smooth
   interpolated surfaces with no information at 250 m.
-- **Depth.** SoilGrids has no 0–30 cm layer and the v1 export does not record
-  which interval was used; coarse fragments were not removed.
+
+### 4.5 The soil carbon column is a stock, not a content
+
+SoilGrids has no 0–30 cm `soc` layer, and the v1 export did not record which
+layer `SOC_mean` came from. The v2 extraction settled it. On 17,266 undiluted
+sample cells, `SOC_mean` against SoilGrids `ocs_0-30cm_mean` (organic carbon
+stock, t/ha) has r = 0.959 and a median ratio of 1.000; against
+thickness-weighted `soc` 0–30 cm, r = 0.337. On diluted cells the ratio
+between the two extractions tracks the valid fraction *w* with r = 0.997.
+
+Every earlier analysis, including this project's first rebuild, read the
+column as SOC content and computed SOC × bulk density × 30 cm on top of a value
+that was already a 0–30 cm stock. The two errors partly cancelled: a stock of
+~31 t/ha read as 3.1 g/kg × 1.5 g/cm³ × 3 gives ~14 t/ha, which falls inside
+the range reported for Punjab's cultivated soils and therefore raised no
+alarm. Coarse fragments are inside SoilGrids' `ocs` prediction, so the second
+v1 depth question is resolved too.
 
 ---
 
@@ -215,15 +238,22 @@ NPP flux (tC/ha/yr) = DN × 0.0001 kgC/m² × 10 = DN / 1000
 ### 5.1 Carbon equations
 
 ```
-SOC stock (tC/ha) = SOC (g/kg) × bulk density (g/cm³) × 30 cm × (1 − coarse fraction) / 10
-NPP flux (tC/ha/yr) = MOD17 DN / 1000
+SOC stock (tC)          = SoilGrids ocs 0–30 cm (t/ha of valid soil) × valid fraction × area (ha)
+Sensitivity (tC/ha)     = SOC (g/kg) × bulk density (g/cm³) × 30 cm × (1 − coarse fraction) / 10
+NPP flux (tC/ha/yr)     = MOD17 DN / 1000
 ```
 
 MOD17 NPP is already expressed as carbon; no biomass-to-carbon factor applies.
 The stock (tC) and the flux (tC/yr) have different dimensions and are reported
-separately. A cell's stock is its density × *w* × its geodesic area.
+separately. A cell's stock is its density × *w* × its geodesic area. The
+headline uses `ocs` because it is SoilGrids' own stock prediction, trained on
+stock observations; the SOC × BD product combines two separately predicted
+layers whose errors do not cancel (Poggio et al., 2021).
 
-### 5.2 Design-based estimation of district totals
+### 5.2 Design-based estimation of district totals (v1 check)
+
+The v2 census (Section 5.7) makes these estimators unnecessary for the
+headline; they are kept as an independent check on the v1 exports.
 
 Treating the *n* = 20,000 cells as a simple random sample of *N* = 66,700, the
 total of a cell quantity *y* has the design-unbiased expansion estimator with a
@@ -291,6 +321,19 @@ Importance is permutation importance on held-out folds (Strobl et al., 2007).
 | API | Flask | summary, metrics, NDVI, GeoJSON by sample or bounding box, paged cells |
 | Frontend | Leaflet, Chart.js | home, map, analytics, model, explorer |
 
+### 5.7 Re-extraction (v2 census)
+
+`notebooks/00_gee_extraction.ipynb` regenerates the lattice for every cell that
+touches either district boundary (71,197 cells), with the fraction of each cell
+inside each boundary. Every layer is reduced over unmasked pixels only, with a
+valid-pixel fraction exported per cell, in 48 resumable chunks per layer group.
+SoilGrids 0–30 cm values are thickness-weighted (5, 10, 15 cm); `ocs` is taken
+as published. MOD17 is scaled inside Earth Engine. A validation step refuses to
+write the table unless bulk density, texture, masking, NPP range, `ocs` range
+and boundary fractions all pass physical checks. Totals are then a census:
+Σ value × valid fraction × area inside the boundary, with no sample and no
+interpolation.
+
 The API has three data modes: `files` reads the pipeline's `results/` directly
 and needs no database; `local` and `cloud` read the databases and fall back to
 the files on failure, reporting the source in every response.
@@ -301,41 +344,44 @@ the files on failure, reporting the source in every response.
 
 ### 6.1 Soil organic carbon stock
 
-| Quantity | Estimate | 95% CI |
-|---|---|---|
-| **SOC stock, 0–30 cm** | **4.549 MtC** | 4.546–4.552 |
-| Mapped soil area (census) | 329,814 ha | — |
-| Mean density over mapped soil | 13.79 tC/ha | 13.78–13.80 |
+| Quantity (v2 census, geoBoundaries ADM2) | Estimate |
+|---|---|
+| **SOC stock, 0–30 cm** | **10.54 MtC** |
+| Area inside the boundary | 369,961 ha |
+| Valid soil area | 342,426 ha |
+| Mean density over valid soil | 30.77 tC/ha (5th–95th percentile of cells 27.3–33.9) |
 
-| Sensitivity variant | MtC | 95% CI |
-|---|---|---|
-| Ratio estimator × census soil area, all diluted cells repaired (headline) | 4.549 | 4.546–4.552 |
-| Expansion estimator (ignores the known area) | 4.545 | 4.531–4.560 |
-| Only cells with *w* ≥ 0.5 repaired, the rest dropped | 4.506 | 4.490–4.521 |
-| All partially diluted cells dropped | 4.362 | 4.344–4.381 |
-| No quality control (zeros averaged in) | 4.483 | 4.468–4.499 |
+| Variant | MtC |
+|---|---|
+| v2 census, geoBoundaries ADM2 boundary (headline) | 10.54 |
+| v2 census, Census 2011 (Datameet) boundary | 10.18 |
+| v2 census, rebuilt from SOC × BD × 30 cm × (1 − coarse fraction) | 14.46 |
+| v1 sample, ratio estimator × census soil area (329,814 ha), 95% CI 10.11–10.12 | 10.12 |
+| v1 sample, expansion estimator, 95% CI 10.08–10.14 | 10.11 |
+| v1 sample, partially diluted cells dropped | 9.70 |
+| v1 sample, column misread as SOC content (all earlier versions) | 4.48 |
 
-The mean density corresponds to about 3.06 g/kg (0.31%) organic carbon at
-1.50 g/cm³, within the 0.2–0.6% reported for Punjab's cultivated soils. Without
-quality control a diluted cell contributes *w*² rather than *w* of its stock, so
-the total is 1.5% low; the difference is small only because few cells are
-diluted. The dilution's main effect was on the apparent skill of the model, not
-on the stock. The interval reflects sampling error only. It excludes known
-biases — the unrecorded depth interval, no coarse-fragment correction, a grid
-covering 94.7% of the district, and cells with BD 1.40–1.50 treated as
-undiluted — and SoilGrids' own prediction uncertainty, which is larger.
+The two boundaries differ by 3%, and the v1 sample agrees with the census in
+density (30.68 vs 30.77 tC/ha); its lower total reflects the v1 grid's smaller
+soil area. The difference that matters is between SoilGrids' two routes to a
+stock: 10.5 MtC from `ocs` and 14.5 MtC from SOC × BD. Both are model
+predictions, neither has been checked against field samples in Ludhiana, and
+the 1.35-fold gap between them is a lower bound on the stock's real
+uncertainty. The v1 sampling interval (±0.01 MtC) measures only how well
+20,000 cells represent 66,700 and should not be read as the uncertainty of
+the stock.
 
 ### 6.2 Net primary production
 
-| Quantity | Estimate | 95% CI |
+| Quantity | v2 census (MOD17 2024) | v1 sample (year unrecorded) |
 |---|---|---|
-| **MOD17 NPP flux, correctly scaled** | **0.295 MtC/yr** | 0.290–0.300 |
-| Area inside the MOD17 domain | 304,063 ha | 302,592–305,533 |
-| Mean rate | 0.971 tC/ha/yr | 0.956–0.986 |
-| Agricultural cells: mean rate | 0.946 tC/ha/yr | |
-| Agricultural cells with negative annual NPP | 19.8% | |
+| **MOD17 NPP flux, correctly scaled** | **0.335 MtC/yr** | 0.295 MtC/yr (95% CI 0.290–0.300) |
+| Area inside the MOD17 domain | 351,622 ha | 304,063 ha |
+| Mean rate | 0.954 tC/ha/yr | 0.971 tC/ha/yr |
+| Cropland cells: mean rate | 0.956 tC/ha/yr | 0.946 tC/ha/yr |
+| Cropland cells with negative annual NPP | 0% | 19.8% |
 
-| Sensitivity variant | MtC/yr |
+| v1 sensitivity variant | MtC/yr |
 |---|---|
 | DN / 1000, negatives kept (headline) | 0.295 |
 | Negatives clipped to zero | 0.361 |
@@ -350,13 +396,12 @@ undiluted — and SoilGrids' own prediction uncertainty, which is larger.
 | Rice | 7.66 (5.72–9.97) |
 | **District, rice + wheat** | **3.34 MtC/yr (2.70–4.07)** |
 
-Correctly scaled MOD17 is 8.8% of this lower bound. Per hectare the gap is the
-same: MOD17 averages 0.95 tC/ha/yr on agricultural cells, against at least
-13.2 tC/ha/yr for one rice + wheat year. (The totals are not perfectly
-comparable: the grid covers ~95% of the district, and the v1 MOD17 year is
-unrecorded while yields are for 2023-24 and 2024.) Together with negative
-annual NPP in a fifth of agricultural cells — implausible for fields that are
-harvested twice a year — this shows that MOD17 substantially underestimates
+Correctly scaled MOD17 is 10.1% of this lower bound in 2024 (8.8% in the v1
+export). Per hectare the gap is the same: MOD17 averages 0.96 tC/ha/yr on
+cropland cells, against at least 13.2 tC/ha/yr for one rice + wheat year. The
+v1 export also reported negative annual NPP in a fifth of agricultural cells —
+implausible for fields harvested twice a year — although the 2024 composite has
+none. This shows that MOD17 substantially underestimates
 productivity in this irrigated, double-cropped landscape. The earlier figure of
 3.7 MtC/yr appeared plausible only because the missing scale factor multiplied
 the underestimate by ten. The unit conversion is fixed by the product
@@ -365,15 +410,18 @@ purpose, not to adjust the conversion.
 
 ### 6.4 What machine learning adds
 
+These experiments use the repaired v1 sample; the v2 census observes every cell
+and needs neither a model nor interpolation.
+
 | Target | Method | R² | RMSE |
 |---|---|---|---|
-| SOC (g/kg; sd 0.187) | Random forest | 0.200 | 0.167 |
-| | Coordinates only | 0.173 | 0.170 |
-| | Training mean | −0.006 | 0.188 |
+| SOC stock (`ocs`, t/ha; sd 1.87) | Random forest | 0.200 | 1.67 |
+| | Coordinates only | 0.172 | 1.70 |
+| | Training mean | −0.006 | 1.88 |
 | NPP (gC/m²/yr; sd 122) | Random forest | 0.339 | 99.5 |
 | | Coordinates only | 0.318 | 101.0 |
 | | Training mean | −0.014 | 123.2 |
-| SOC gap filling | IDW, random folds | 0.808 | 0.084 |
+| SOC gap filling | IDW, random folds | 0.808 | 0.835 |
 | NPP gap filling | IDW, random folds | 0.598 | 77.6 |
 
 Under spatial validation, both models beat the mean but add only 0.02–0.03 R²
@@ -406,6 +454,12 @@ choice for the interpolation step because the prediction targets are
 interleaved with the sample. The design should follow the use (Wadoux et al.,
 2021).
 
+**A plausible number is not a checked number.** The soil stock was
+mis-specified in every version, including the first rebuild of this project,
+because ~14 tC/ha looked reasonable. The error surfaced only when an
+independent extraction allowed the column to be matched layer by layer. Units
+in an export should be verified against the source, not against expectations.
+
 **A model was not needed for the headline.** Once the sample was recognised as
 random, a survey estimator produced the totals with a stated standard error and
 no modelling assumptions. Machine learning is retained as an experiment whose
@@ -417,14 +471,17 @@ result — little skill beyond position — is informative in its own right.
 
 1. **No field measurements.** SOC values are SoilGrids predictions; their local
    accuracy in Ludhiana is unknown, and their uncertainty is not propagated.
-2. **Depth and coarse fragments (v1).** The SoilGrids interval behind the v1
-   export is unrecorded and coarse fragments were not removed.
-3. **Boundary.** The grid covers 94.7% of the Census area and is not clipped to
-   an official boundary.
+   SoilGrids' two routes to a stock differ 1.35-fold here (Section 6.1).
+2. **Boundary.** The headline uses geoBoundaries ADM2 (369,961 ha), 1.8% below
+   the Census 2011 figure of 376,700 ha; the Census-derived Datameet polygon
+   gives 3% less stock. Neither is an official Survey of India boundary.
+3. **Bulk density layer (v1).** v1 bulk density is the 0–5 cm layer; it is used
+   only to estimate the valid fraction *w*, not in the stock.
 4. **NPP product.** MOD17 is not fit for crop flux here (Section 6.3). The
    yield-based estimate covers only rice and wheat and is a lower bound.
-5. **NDVI attribution.** NDVI is attributed by an identifier that collides for
-   4,269 cells; those cells carry no NDVI.
+5. **NDVI attribution (v1).** v1 NDVI is attributed by an identifier that
+   collides for 4,269 cells; those cells carry no NDVI. v2 NDVI is extracted
+   per cell.
 6. **Not a credit quantity.** The study establishes no baseline, change over
    time, additionality or permanence. For cropland soil carbon credits the
    relevant Verra methodology is VM0042 (Improved Agricultural Land
@@ -432,31 +489,30 @@ result — little skill beyond position — is informative in its own right.
 
 ---
 
-## 9. Re-extraction and further work
+## 9. Further work
 
-`notebooks/00_gee_extraction.ipynb` re-extracts every layer with masking applied
-before reduction and the valid fraction exported per cell; generates the grid
-from the district boundary with an in-district fraction per cell; computes
-thickness-weighted 0–30 cm SoilGrids values, removes coarse fragments and
-exports SoilGrids' own 0–30 cm stock as a cross-check; scales MOD17 inside Earth
-Engine; and replaces the undocumented NDVI with Sentinel-2 monthly composites
-and clear-observation counts. It refuses inputs that fail physical checks. The
-pipeline then runs as a census of every cell and needs neither the sample nor
-interpolation. Further work, in order of value:
+The re-extraction (Section 5.7) has been run and its census is the headline.
+In order of value:
 
-1. Run the re-extraction (requires an Earth Engine account).
-2. Propagate SoilGrids uncertainty from its published quantile layers.
+1. Propagate SoilGrids uncertainty from its published `ocs` quantile layers
+   (ISRIC WCS; they are not on Earth Engine).
+2. Validate SoilGrids locally against Soil Health Card or other soil-test
+   data, which would also show which of the two stock routes is closer.
 3. Replace MOD17 for crop flux with the yield-based estimate or a crop-specific
    light-use-efficiency model.
-4. Validate SoilGrids locally against any available soil-test data.
+4. For any carbon-credit use, follow VM0042: measured baselines, re-measurement
+   over time, and uncertainty deductions.
 
 ---
 
 ## 10. Conclusions
 
-The 0–30 cm soil organic carbon stock of the Ludhiana grid is 4.55 MtC
-(13.8 tC/ha over mapped soil), estimated without a predictive model from a
-random sample of repaired SoilGrids values and the census soil area. MOD17 NPP, correctly scaled, is 0.30 MtC/yr, an order
+The 0–30 cm soil organic carbon stock of Ludhiana District is 10.5 MtC
+(30.8 tC/ha over valid soil) by a census of SoilGrids' stock layer, about 2.3
+times the figure every earlier version reported, because the input column was
+a stock that had been treated as a concentration. Rebuilding it from SoilGrids'
+concentration and density layers gives 14.5 MtC; field data are needed to say
+which is closer. MOD17 NPP, correctly scaled, is 0.34 MtC/yr, an order
 of magnitude below the 3.3 MtC/yr lower bound implied by the district's crop
 yields; the product is unsuitable for crop flux in this landscape. The
 machine-learning models that originally appeared to predict soil carbon with

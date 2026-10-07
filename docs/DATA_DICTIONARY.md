@@ -24,7 +24,7 @@ parameter.
 | `DEM_mean`, `Slope_mean` | m, degrees | SRTM-like | |
 | `sand_pct`, `clay_pct` | % | SoilGrids (÷10 applied in export) | diluted where `0 < bd < 1.40` (F1) |
 | `bd_gcm3` / `BD_g_cm3` | g/cm³ | SoilGrids `bdod` (÷100 applied) | diluted; used to estimate *w* |
-| `SOC_mean` | dg/kg | SoilGrids `soc`, depth unrecorded | ×0.1 → g/kg; diluted |
+| `SOC_mean` | **t/ha** | SoilGrids `ocs` 0–30 cm organic carbon **stock** (F14) | not SOC content despite the name; diluted |
 | `Agricultur` | MOD17 DN | MOD17A3HGF `Npp` | ×0.0001 kgC/m² (F3); NaN outside product domain |
 | `Kharif_Pre`, `Rabi_Preci` | mm | interpolated rainfall | position proxies (F6) |
 | `LST_Sept20`, `Rabi_LST_2` | °C | land-surface temperature | position proxies (F6) |
@@ -43,7 +43,7 @@ parameter.
 
 Both simplified at 0.0001° (~10 m); area change < 0.001%. Census 2011 reports 376,700 ha.
 
-## v2 (`IIRS/Carbon_Stocks/v2/ludhiana_cells_v2.csv`)
+## v2 (`IIRS/Carbon_Stocks/v2/ludhiana_cells_v2.csv.gz`)
 
 | Column | Unit | Source |
 |---|---|---|
@@ -51,7 +51,7 @@ Both simplified at 0.0001° (~10 m); area change < 0.001%. Census 2011 reports 3
 | `cell_area_ha`, `in_district_frac` | ha, fraction | geodesic area; share inside the default boundary |
 | `in_ludhiana_geoboundaries_adm2`, `in_ludhiana_census2011_datameet` | fraction | share inside each boundary |
 | `soc_030`, `bdod_030`, `sand_030`, `clay_030`, `cfvo_030` | g/kg, g/cm³, %, %, vol % | SoilGrids 2.0, thickness-weighted 0–30 cm |
-| `ocs_030_t_ha` | t/ha | SoilGrids `ocs` 0–30 cm (cross-check) |
+| `ocs_030_t_ha` | t/ha | SoilGrids `ocs` 0–30 cm, mean over valid pixels — **the headline stock density** |
 | `soil_valid_frac` | fraction | share of the cell with a SoilGrids value |
 | `npp_gc_m2_yr`, `npp_qc`, `npp_valid_frac` | gC/m²/yr, %, fraction | MOD17A3HGF v6.1, scaled in Earth Engine |
 | `cropland_frac`, `builtup_frac`, `water_frac`, `tree_frac` | fraction | ESA WorldCover 2021 |
@@ -68,9 +68,9 @@ Both simplified at 0.0001° (~10 m); area change < 0.001%. Census 2011 reports 3
 | `lon`, `lat`, `WKT` | degrees | centroid and polygon |
 | `cell_area_ha` | ha | geodesic area (inside the boundary in v2) |
 | `soil_status`, `w_soil`, `w_reliable` | — , fraction, bool | full / partial / nodata; valid soil share; repaired per-cell values trusted (w ≥ 0.5) |
-| `bd_gcm3_rec`, `soc_gkg` | g/cm³, g/kg | repaired values |
+| `bd_gcm3_rec`, `soc_gkg` | g/cm³, g/kg | bulk density and SOC content (v2: SoilGrids 0–30 cm; v1: BD repaired, SOC content unavailable → empty) |
 | `soc_source` | — | observed / interpolated / no soil data |
-| `soc_stock_tc_ha` | tC/ha | per hectare of valid soil |
+| `soc_stock_tc_ha` | tC/ha | SoilGrids `ocs` 0–30 cm per hectare of valid soil |
 | `soc_stock_tc` | tC | `soc_stock_tc_ha × w_soil × cell_area_ha` |
 | `npp_flux_tc_ha_yr`, `npp_flux_tc_yr` | tC/ha/yr, tC/yr | MOD17, correctly scaled |
 | `npp_source` | — | observed / interpolated / outside MOD17 domain |

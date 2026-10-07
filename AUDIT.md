@@ -14,19 +14,20 @@ have.
 
 | ID | Finding | Effect on published numbers | Status |
 |---|---|---|---|
-| F1 | Unmasked SoilGrids nodata diluted every soil band | SOC model R² 0.95 was an artefact; on clean cells 0.19–0.20 | MITIGATED |
+| F1 | Unmasked SoilGrids nodata diluted every soil band | SOC model R² 0.95 was an artefact; on clean cells 0.19–0.20 | FIXED (v2 masks before reducing) |
 | F2 | `Grid_ID` is a random integer, not a cell key | 2,155 real cells deleted; NDVI joined across unrelated cells | FIXED |
 | F3 | MOD17 scale factor never applied | NPP flux 10× too high | FIXED |
-| F4 | MOD17 is unfit for crop flux in this landscape | Corrected flux is ~9% of a yield-based lower bound | OPEN — product limitation |
+| F4 | MOD17 is unfit for crop flux in this landscape | Corrected flux is ~9–10% of a yield-based lower bound | OPEN — product limitation |
 | F5 | 500 m NPP target duplicated across 250 m cells | Random-split R² for NPP uninterpretable | FIXED (not used) |
 | F6 | Four climate covariates are position proxies | Most NPP model skill was position | FIXED |
-| F7 | SoilGrids depth interval unrecorded; no coarse-fragment term | Unknown bias in the stock | MITIGATED |
+| F7 | SoilGrids depth interval unrecorded; no coarse-fragment term | Resolved by F14: v1 used the 0–30 cm `ocs` stock | FIXED |
 | F8 | Old de-duplication rule biased the grid | Removed the least-agricultural cells | FIXED |
-| F9 | Grid not clipped to an official boundary | Grid covers 94.7% of the Census area | MITIGATED |
-| F10 | Extraction script missing from the repository | Provenance of every input unverifiable | MITIGATED |
+| F9 | Grid not clipped to an official boundary | Grid covers 94.7% of the Census area | FIXED (v2) |
+| F10 | Extraction script missing from the repository | Provenance of every input unverifiable | FIXED (v2 run + manifest) |
 | F11 | Dashboard served hard-coded and stale figures | Values shown did not match any single run | FIXED |
 | F12 | Root and backend `requirements.txt` were UTF-16 and Windows-pinned | Project not installable elsewhere | FIXED |
 | F13 | First rebuild dropped cells with *w* < 0.5 from the soil total | Total biased low by ~0.9% | FIXED |
+| F14 | `SOC_mean` is SoilGrids `ocs` (0–30 cm stock, t/ha), read as SOC content | Soil stock understated 2.2–2.3× in every earlier version | FIXED |
 
 ---
 
@@ -158,8 +159,11 @@ against 0.318 for coordinates alone.
 SoilGrids has no 0–30 cm layer (intervals 0–5, 5–15, 15–30 cm). The v1 export
 does not record which band was used. **v2 fix:** thickness-weighted 0–30 cm for
 SOC and bulk density, coarse fragments from `cfvo`, and SoilGrids' own 0–30 cm
-`ocs` stock exported as a cross-check (the validation step requires agreement
-within 35%).
+`ocs` stock exported. **Superseded by F14:** the v1 column was `ocs` itself, so
+its depth (0–30 cm) is known and coarse fragments are inside the product's
+prediction. Rebuilding the stock from SOC × BD × 30 × (1 − cfvo) runs a median
+1.35× above `ocs` (r = 0.33 between them on fully valid cells), so this
+comparison is recorded as a diagnostic, not a pass/fail check.
 
 ## F8 — The old de-duplication rule biased the grid
 
@@ -186,7 +190,9 @@ the second boundary is reported as a sensitivity run.
 
 Nothing in the repository showed how any input was made. **Fix:**
 `notebooks/00_gee_extraction.ipynb` documents and reproduces every layer, writes
-a manifest, and refuses v2 inputs that fail physical checks.
+a manifest, and refuses v2 inputs that fail physical checks. It has now been
+run against Earth Engine project `my-projects-510917` (2026-10-07, earthengine-api
+1.7.47, 48 chunks × 5 layer groups) and every check passes.
 
 ## F11 — Dashboard figures
 
@@ -205,24 +211,20 @@ Both `requirements.txt` files were UTF-16 with a Windows-only `pywinpty` pin.
 
 ---
 
-## What the numbers are now (v1 interim)
+## What the numbers are now (v2 census)
 
-| Quantity | Previously published | Now |
-|---|---|---|
-| SOC stock 0–30 cm | 4.3554 MtC | **4.549 MtC** (95% CI 4.546–4.552, sampling error only) |
-| Mean SOC density | 12.61 tC/ha | **13.79 tC/ha** of mapped soil (329,814 ha, census) |
-| MOD17 NPP flux | 3.7085 MtC/yr | **0.295 MtC/yr** (95% CI 0.290–0.300) |
-| Crop-yield NPP (independent) | — | **3.34 MtC/yr** (90% range 2.70–4.07), lower bound |
-| SOC model spatial R² | 0.9492 | 0.200 (coordinates alone 0.173) — not used |
-| Cells | 64,545 | 66,700 |
+| Quantity | Previously published | First rebuild (v1, pre-F14) | Now (v2 census) |
+|---|---|---|---|
+| SOC stock 0–30 cm | 4.3554 MtC | 4.549 MtC | **10.54 MtC** (Census-boundary check 10.18; repaired v1 sample 10.12, 95% CI 10.11–10.12) |
+| Mean SOC density | 12.61 tC/ha | 13.79 tC/ha | **30.77 tC/ha** over 342,426 ha of valid soil |
+| MOD17 NPP flux | 3.7085 MtC/yr | 0.295 MtC/yr (year unrecorded) | **0.335 MtC/yr** (2024) |
+| Crop-yield NPP (independent) | — | 3.34 MtC/yr | **3.34 MtC/yr** (90% range 2.70–4.07), lower bound |
+| SOC model spatial R² | 0.9492 | 0.200 (coordinates alone 0.173) | not needed — every cell observed |
+| Cells | 64,545 | 66,700 | 71,197 (area-weighted inside the boundary) |
 
-The soil stock rises 4.4%, mainly because no real cells are deleted (F8) and
-diluted cells are repaired rather than counted at a fraction of their value. It
-moves little because the stock is built from product values and few cells were
-diluted. What collapses is the claim that a model predicts it. The confidence
-interval covers sampling error only; it excludes the known biases above and
-SoilGrids' own prediction uncertainty, which is much larger and not yet
-propagated (its quantile layers are not on Earth Engine).
+The census stock is model output (SoilGrids), not measurement. Its
+uncertainty is dominated by SoilGrids itself, which is not propagated; the
+1.35× gap between `ocs` and SOC × BD × 30 is a lower bound on how large that is.
 
 ## F13 — First rebuild dropped low-*w* cells from the soil total
 
@@ -238,11 +240,31 @@ pixel duplication could explain, and led to fixes in the dashboard (one MongoDB
 client per process, correct source labels when a collection is empty, licensed
 basemaps) and the extraction (terrain reduced at its native 30 m).
 
+## F14 — `SOC_mean` is a carbon stock in t/ha, not carbon content
+
+Found when the v2 extraction made a layer-by-layer comparison possible. On
+17,266 undiluted sample cells, v1 `SOC_mean` against SoilGrids
+`ocs_0-30cm_mean` gives r = 0.959 and a median ratio of 1.000; against
+thickness-weighted `soc` 0–30 cm r = 0.337, and no single `soc` depth layer
+exceeds r = 0.31. On partially diluted cells the v1/v2 ratio tracks the valid
+fraction *w* with r = 0.997, so the column is diluted like the others (F1).
+
+Every earlier version misread it. The original pipeline and the rebuild's
+first pass both treated it as SOC content (the rebuild as dg/kg, following the
+old defect ledger) and computed SOC × BD × 30 cm on top of a value that was
+already a 0–30 cm stock. With BD ≈ 1.5 g/cm³ the two errors partly cancelled
+into a plausible-looking 12–14 tC/ha. **Fix:** `config.load_samples` exposes the
+column as `ocs_raw_t_ha`; v1 stock = Σ `ocs` × *w* × area (which equals
+Σ `SOC_mean` × area, so *w* cancels as before); v2 headline = Σ `ocs` × valid
+fraction × area. The old reading is kept as a sensitivity variant (4.48 MtC).
+`01_data_audit.ipynb` reproduces the evidence and `tests/test_results.py`
+fails if the mean density drops back below 20 tC/ha.
+
 ## Still open
 
-1. Run `notebooks/00_gee_extraction.ipynb` (needs your Earth Engine account) to
-   replace v1 interim figures with a census from clean inputs.
-2. Propagate SoilGrids uncertainty (download the Q0.05/Q0.95 layers from ISRIC
-   WCS for the district bounding box).
-3. Decide how to report crop flux given F4.
-4. Field samples, if any become available, to validate SoilGrids locally.
+1. Propagate SoilGrids uncertainty (download the `ocs` Q0.05/Q0.95 layers from
+   ISRIC WCS for the district bounding box).
+2. Decide how to report crop flux given F4.
+3. Field samples, if any become available, to validate SoilGrids locally —
+   especially given the `ocs` vs SOC × BD disagreement.
+4. The national boundary in any published map must follow Survey of India.

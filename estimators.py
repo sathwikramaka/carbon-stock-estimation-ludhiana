@@ -142,21 +142,26 @@ def crop_npp_monte_carlo(crops: dict, n: int = 20_000, seed: int = 42) -> dict:
 def census_totals(cells: pd.DataFrame) -> dict:
     """District totals from clean v2 inputs, where every cell is observed.
 
-    Expects columns: cell_area_ha, in_district_frac, soil_valid_frac, soc_030
-    (g/kg), bdod_030 (g/cm3), cfvo_030 (vol %), npp_gc_m2_yr, npp_valid_frac.
+    Expects columns: cell_area_ha, in_district_frac, soil_valid_frac,
+    ocs_030_t_ha (SoilGrids ocs 0-30 cm, t/ha over valid soil), soc_030 (g/kg),
+    bdod_030 (g/cm3), cfvo_030 (vol %), npp_gc_m2_yr, npp_valid_frac.
     Masked cells carry NaN and contribute nothing; partially valid cells
-    contribute their valid area only.
+    contribute their valid area only. The headline stock uses ocs, the
+    product's own stock prediction; soil_stock_computed_tc rebuilds it from
+    SOC x BD x 30 x (1 - coarse) as a sensitivity.
     """
     area_in = cells["cell_area_ha"] * cells["in_district_frac"]
     soil_area = area_in * cells["soil_valid_frac"]
-    dens = cells["soc_030"] * cells["bdod_030"] * 30 * (1 - cells["cfvo_030"] / 100) / 10
+    dens = cells["ocs_030_t_ha"]
     stock = (dens * soil_area).fillna(0)
+    dens_c = cells["soc_030"] * cells["bdod_030"] * 30 * (1 - cells["cfvo_030"] / 100) / 10
     npp_area = area_in * cells["npp_valid_frac"]
     flux = (cells["npp_gc_m2_yr"] / 100 * npp_area).fillna(0)
     return {
         "area_in_district_ha": float(area_in.sum()),
         "soil_area_ha": float(soil_area.where(dens.notna(), 0).sum()),
         "soil_stock_tc": float(stock.sum()),
+        "soil_stock_computed_tc": float((dens_c * soil_area).fillna(0).sum()),
         "npp_area_ha": float(npp_area.where(cells["npp_gc_m2_yr"].notna(), 0).sum()),
         "npp_flux_tc_yr": float(flux.sum()),
     }

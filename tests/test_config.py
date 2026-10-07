@@ -33,13 +33,13 @@ def test_soil_qc_classes_and_recovery():
 
 
 def test_partial_cell_stock_does_not_depend_on_w():
-    """(SOC/w)(BD/w) * 3 * w * A = SOC_dil * BD_REF * 3 * A, so tiny w adds no instability to totals."""
-    soc_true, area = 3.0, 5.35
+    """(ocs/w) * w * A = ocs_diluted * A, so tiny w adds no instability to totals."""
+    ocs_true, area = 30.8, 5.35
     for w in [0.9, 0.3, 0.02]:
-        soc_dil, bd_dil = soc_true * w, C.BD_REF * w
+        ocs_dil, bd_dil = ocs_true * w, C.BD_REF * w
         ww = C.soil_qc([bd_dil]).w_soil.iloc[0]
-        stock = C.soc_stock_tc_ha(C.undilute([soc_dil], [ww])[0], C.undilute([bd_dil], [ww])[0]) * ww * area
-        assert stock == pytest.approx(soc_dil * C.BD_REF * 3 * area)
+        stock = C.undilute([ocs_dil], [ww])[0] * ww * area
+        assert stock == pytest.approx(ocs_dil * area)
 
 
 def test_lattice_round_trip():
@@ -82,7 +82,7 @@ def test_samples_are_all_kept_and_inside_grid(grid):
     s = C.load_samples()
     assert len(s) == 20_000                     # the old loader dropped 199 real cells
     assert s.cell_id.isin(grid.cell_id).all()
-    assert s.soc_gkg_raw.median() == pytest.approx(3.08, abs=0.1)   # g/kg, not dg/kg
+    assert s.ocs_raw_t_ha.median() == pytest.approx(30.8, abs=1.0)   # SoilGrids ocs t/ha (F14), not g/kg or dg/kg
 
 
 @needs_raw

@@ -13,3 +13,6 @@ IIRS/Carbon_Stocks/v2/*.csv
 
 # Local-only backups made during the rebuild
 archive/pre_rebuild_snapshot/
+
+# Earth Engine per-chunk cache (resumable extraction)
+IIRS/Carbon_Stocks/v2/chunks/

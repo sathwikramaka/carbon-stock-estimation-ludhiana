@@ -39,9 +39,13 @@ N_GRID_CELLS = 66_700
 OFFICIAL_AREA_HA = 376_700
 
 # ── Units: SoilGrids 2.0 (as found in the existing export) ────
-# soc arrives in dg/kg (SoilGrids native, conversion factor 10).
-# bdod arrives already rescaled to g/cm3, sand/clay already in %.
-SOC_DGKG_TO_GKG = 0.1
+# `SOC_mean` in the v1 sample file is NOT soil organic carbon content. It is
+# SoilGrids `ocs` (organic carbon STOCK, 0-30 cm) in t/ha: against a fresh
+# Earth Engine extraction of ocs_0-30cm_mean it has r = 0.963 and a median
+# ratio of 1.000 on fully valid cells, while no soc depth layer correlates
+# above r = 0.31 (AUDIT.md, finding F14). It is diluted by unmasked nodata
+# like every other soil band (v1/v2 ratio tracks w with r = 0.997).
+# bdod arrives rescaled to g/cm3 (0-5 cm layer), sand/clay in %.
 SOC_DEPTH_CM = 30
 # SoilGrids has no 0-30 cm layer. A 0-30 cm value is the thickness-weighted
 # mean of the three standard intervals. Used by the re-extraction notebook;
@@ -49,7 +53,9 @@ SOC_DEPTH_CM = 30
 SOILGRIDS_DEPTHS = ("0-5cm", "5-15cm", "15-30cm")
 SOILGRIDS_DEPTH_WEIGHTS = (5 / 30, 10 / 30, 15 / 30)
 
-# SOC stock (tC/ha) = SOC (g/kg) x BD (g/cm3) x depth (cm) x (1 - coarse frac) / 10
+# Computed stock (tC/ha) = SOC (g/kg) x BD (g/cm3) x depth (cm) x (1 - coarse frac) / 10.
+# Used only as a v2 sensitivity: SoilGrids models ocs directly, and the two
+# disagree by a median factor of ~1.4 in Ludhiana (Poggio et al. 2021).
 def soc_stock_tc_ha(soc_gkg, bd_gcm3, depth_cm=SOC_DEPTH_CM, coarse_frac=0.0):
     return np.asarray(soc_gkg) * np.asarray(bd_gcm3) * depth_cm * (1 - np.asarray(coarse_frac)) / 10.0
 
@@ -65,7 +71,7 @@ NPP_DN_TO_TC_HA_YR = 1e-3
 CO2_PER_C = 44 / 12
 
 AG_FORMULA = "NPP flux (tC/ha/yr) = MOD17 DN x 0.0001 kgC/m2 x 10 = DN / 1000"
-BG_FORMULA = "SOC stock (tC/ha) = SOC (g/kg) x BD (g/cm3) x 30 cm / 10"
+BG_FORMULA = "SOC stock (tC) = SoilGrids ocs 0-30 cm (t/ha of valid soil) x valid-soil fraction x cell area (ha)"
 
 # ── Soil quality control: unmasked-nodata dilution ────────────
 # The export averaged masked SoilGrids pixels as zeros, so a cell that is a
@@ -84,9 +90,9 @@ def soil_qc(bd_gcm3) -> pd.DataFrame:
     w = BD / BD_REF) or "nodata" (BD = 0, w = 0).
 
     Every partial cell counts towards totals: its stock contribution
-    (SOC/w)(BD/w) * 3 * w * area = SOC_diluted * BD_REF * 3 * area does not
-    depend on w, so a small w adds no instability. `w_reliable` marks cells
-    whose *repaired per-cell values* (SOC/w) are precise enough to use as
+    (ocs/w) * w * area = ocs_diluted * area does not depend on w, so a small
+    w adds no instability. `w_reliable` marks cells whose *repaired per-cell
+    values* (ocs/w) are precise enough to use as
     interpolation sources or to display (relative error of w ~0.016 / w).
     """
     bd = pd.Series(np.asarray(bd_gcm3, dtype=float))
@@ -190,7 +196,7 @@ def load_grid(data: Path = DATA) -> pd.DataFrame:
 
 
 def load_samples(data: Path = DATA) -> pd.DataFrame:
-    """The 20,000-cell random sample with SOC (g/kg) and raw MOD17 NPP DN.
+    """The 20,000-cell random sample: SoilGrids ocs 0-30 cm (t/ha, diluted) and raw MOD17 NPP DN.
 
     Below- and above-ground sample files are row-aligned. No row is dropped:
     the old drop_duplicates('Grid_ID') deleted 199 real cells per file.
@@ -202,7 +208,7 @@ def load_samples(data: Path = DATA) -> pd.DataFrame:
     geo = grid_rowcol(bg["WKT"])
     s = pd.DataFrame({
         "cell_id": cell_key(geo["grid_row"], geo["grid_col"]).to_numpy(),
-        "soc_gkg_raw": bg["SOC_mean"].to_numpy() * SOC_DGKG_TO_GKG,
+        "ocs_raw_t_ha": bg["SOC_mean"].to_numpy(),
         "npp_dn": ag["Agricultur"].to_numpy(),
     })
     return assert_unique(s)
