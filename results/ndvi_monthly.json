@@ -1,0 +1,98 @@
+[
+  {
+    "month": "Jun 24",
+    "sort_order": 0,
+    "season": "Kharif",
+    "median_ndvi": 0.1726,
+    "cells_with_value": 71197,
+    "missing_share": 0.0
+  },
+  {
+    "month": "Jul 24",
+    "sort_order": 1,
+    "season": "Kharif",
+    "median_ndvi": 0.3003,
+    "cells_with_value": 70739,
+    "missing_share": 0.0064
+  },
+  {
+    "month": "Aug 24",
+    "sort_order": 2,
+    "season": "Kharif",
+    "median_ndvi": 0.6729,
+    "cells_with_value": 69867,
+    "missing_share": 0.0187
+  },
+  {
+    "month": "Sep 24",
+    "sort_order": 3,
+    "season": "Kharif",
+    "median_ndvi": 0.7103,
+    "cells_with_value": 71197,
+    "missing_share": 0.0
+  },
+  {
+    "month": "Oct 24",
+    "sort_order": 4,
+    "season": "Kharif",
+    "median_ndvi": 0.4712,
+    "cells_with_value": 71197,
+    "missing_share": 0.0
+  },
+  {
+    "month": "Nov 24",
+    "sort_order": 5,
+    "season": "Rabi",
+    "median_ndvi": 0.1827,
+    "cells_with_value": 71197,
+    "missing_share": 0.0
+  },
+  {
+    "month": "Dec 24",
+    "sort_order": 6,
+    "season": "Rabi",
+    "median_ndvi": 0.3507,
+    "cells_with_value": 71197,
+    "missing_share": 0.0
+  },
+  {
+    "month": "Jan 25",
+    "sort_order": 7,
+    "season": "Rabi",
+    "median_ndvi": 0.5392,
+    "cells_with_value": 71197,
+    "missing_share": 0.0
+  },
+  {
+    "month": "Feb 25",
+    "sort_order": 8,
+    "season": "Rabi",
+    "median_ndvi": 0.7177,
+    "cells_with_value": 71197,
+    "missing_share": 0.0
+  },
+  {
+    "month": "Mar 25",
+    "sort_order": 9,
+    "season": "Rabi",
+    "median_ndvi": 0.6742,
+    "cells_with_value": 71197,
+    "missing_share": 0.0
+  },
+  {
+    "month": "Apr 25",
+    "sort_order": 10,
+    "season": "Rabi",
+    "median_ndvi": 0.2644,
+    "cells_with_value": 71197,
+    "missing_share": 0.0
+  },
+  {
+    "month": "May 25",
+    "sort_order": 11,
+    "season": "Fallow",
+    "median_ndvi": 0.211,
+    "cells_with_value": 71197,
+    "missing_share": 0.0
+  }
+]

@@ -1,0 +1,142 @@
+{
+  "mode": "v2-census",
+  "run_date": "2026-10-08",
+  "status": "census",
+  "district": "Ludhiana, Punjab, India",
+  "grid": {
+    "cells": 71197,
+    "area_ha": 369960.9,
+    "official_area_ha": 376700,
+    "coverage_of_official_area": 0.9821,
+    "sampled_cells": null,
+    "agri_cells": 60257
+  },
+  "soil": {
+    "stock_mtc": {
+      "estimate": 10.5371,
+      "se": null,
+      "ci95": null
+    },
+    "soil_area_ha": {
+      "estimate": 342426
+    },
+    "mean_density_tc_ha": {
+      "estimate": 30.772
+    },
+    "depth_cm": 30,
+    "method": "Census of every cell; SoilGrids ocs 0-30 cm (t/ha) x valid-soil fraction x area inside boundary",
+    "sensitivity": [
+      {
+        "variant": "Boundary: ludhiana_geoboundaries_adm2 (headline)",
+        "estimate": 10.5371,
+        "area_ha": 369961
+      },
+      {
+        "variant": "Boundary: ludhiana_census2011_datameet",
+        "estimate": 10.1832,
+        "area_ha": 358482
+      },
+      {
+        "variant": "Rebuilt from SOC x BD x 30 cm x (1 - coarse fraction), 0-30 cm thickness-weighted",
+        "estimate": 14.4565
+      }
+    ],
+    "ocs_crosscheck_ratio": 1.352,
+    "soilgrids_uncertainty": {
+      "headline_mean_mtc": 10.507,
+      "median_q50_mtc": 8.205,
+      "correlated_90pct_mtc": [
+        2.173,
+        27.685
+      ],
+      "independent_90pct_mtc": [
+        10.457,
+        10.558
+      ],
+      "soil_area_ha": 341413
+    }
+  },
+  "npp": {
+    "flux_mtc_per_year": {
+      "estimate": 0.3353,
+      "se": null,
+      "ci95": null
+    },
+    "domain_area_ha": {
+      "estimate": 351622
+    },
+    "mean_rate_tc_ha_yr": {
+      "estimate": 0.954
+    },
+    "conversion": "npp_gc_m2_yr / 100 (scaled inside Earth Engine)",
+    "method": "Census of every cell, area inside boundary"
+  },
+  "crop_yield_crosscheck": {
+    "total_mtc_median": 3.3360016595439093,
+    "total_mtc_p05_p95": [
+      2.7049946217867977,
+      4.067613507180817
+    ],
+    "per_crop": {
+      "wheat": {
+        "tc_ha_median": 5.5454298195703196,
+        "tc_ha_p05_p95": [
+          4.0983778478683295,
+          7.258357768709434
+        ]
+      },
+      "rice": {
+        "tc_ha_median": 7.656463321281429,
+        "tc_ha_p05_p95": [
+          5.72405711106966,
+          9.974211661898435
+        ]
+      }
+    },
+    "draws": 20000,
+    "mod17_over_crop_ratio": 0.101,
+    "crop_tc_ha_yr_double_cropped": 13.2,
+    "comparability_note": "MOD17 is totalled over the grid's product domain (the grid covers ~95% of the district) while crop areas are district-wide; the MOD17 year in v1 is unrecorded while yields are 2023-24 (wheat) and 2024 (paddy). Neither changes the order-of-magnitude gap.",
+    "inputs": {
+      "wheat": {
+        "area_ha": 245200,
+        "yield_t_ha": 5.0,
+        "yield_rel_sd": 0.1,
+        "dry_frac": 0.89,
+        "residue_ratio": 1.3,
+        "residue_rel_sd": 0.2,
+        "root_shoot": 0.23,
+        "root_shoot_rel_sd": 0.41
+      },
+      "rice": {
+        "area_ha": 256600,
+        "yield_t_ha": 7.014,
+        "yield_rel_sd": 0.1,
+        "dry_frac": 0.89,
+        "residue_ratio": 1.4,
+        "residue_rel_sd": 0.2,
+        "root_shoot": 0.16,
+        "root_shoot_rel_sd": 0.35
+      }
+    }
+  },
+  "formulas": {
+    "soil": "SOC stock (tC) = SoilGrids ocs 0-30 cm (t/ha of valid soil) x valid-soil fraction x cell area (ha)",
+    "npp": "NPP flux (tC/ha/yr) = MOD17 DN x 0.0001 kgC/m2 x 10 = DN / 1000"
+  },
+  "previous_published": {
+    "soil_stock_mtc": 4.3554,
+    "rebuild_interim_soil_stock_mtc": 4.549,
+    "npp_flux_mtc_per_year": 3.7085,
+    "soc_r2_spatial": 0.9492,
+    "npp_r2_spatial": 0.4226,
+    "cells": 64545,
+    "why_superseded": "SOC_mean is SoilGrids ocs in t/ha but was read as SOC content (F14); SOC model learned unmasked-nodata dilution; MOD17 scale factor skipped; 2,155 real cells deleted by Grid_ID de-duplication"
+  },
+  "caveats": [
+    "Soil stocks are SoilGrids 2.0 ocs model predictions, not field measurements. SoilGrids' own 90% prediction interval, summed with fully correlated errors, puts the district stock at 2.173-27.685 MtC (05_soilgrids_uncertainty.ipynb). Rebuilding the stock from SoilGrids SOC x BD instead gives about 1.4x more.",
+    "MOD17 NPP captures about 10% of the crop-yield lower bound in 2024; it is not fit for crop carbon flux here.",
+    "Soil stock (tC) and NPP flux (tC/yr) have different dimensions and are never summed.",
+    "Neither figure is a carbon-credit quantity: no baseline, additionality, permanence or field verification."
+  ]
+}
