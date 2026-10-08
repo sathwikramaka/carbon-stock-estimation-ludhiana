@@ -12,8 +12,6 @@ IIRS/Carbon_Stocks/results/model_features.parquet
 # Earth Engine downloads (large; reproducible from IIRS/Scrpit/00_gee_extraction.ipynb)
 IIRS/Carbon_Stocks/v2/*.csv
 
-# Local-only backups
-archive/pre_rebuild_snapshot/
 
 # Earth Engine per-chunk cache (resumable extraction)
 IIRS/Carbon_Stocks/v2/chunks/
