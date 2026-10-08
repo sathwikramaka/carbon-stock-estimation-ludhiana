@@ -90,6 +90,8 @@ cd dashboard/backend
 python app.py                      # http://localhost:5000
 ```
 
+On Windows you can double-click `dashboard/run_dashboard.bat` instead.
+
 `DB_MODE` in `.env` selects `files` (default, reads `results/`), `local`
 (PostgreSQL + MongoDB) or `cloud` (Supabase + Atlas). Database modes fall back
 to the files if a database is unreachable, and every response says which
