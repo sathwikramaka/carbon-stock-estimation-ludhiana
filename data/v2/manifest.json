@@ -1,0 +1,65 @@
+{
+  "run_date": "2026-10-07",
+  "ee_project": "my-projects-510917",
+  "ee_version": "1.7.47",
+  "boundaries": {
+    "default": "ludhiana_geoboundaries_adm2",
+    "check": "ludhiana_census2011_datameet"
+  },
+  "n_cells": 71197,
+  "grid_step_deg": 0.002245788210302635,
+  "chunk": 1500,
+  "scales_m": {
+    "soil": 50,
+    "npp": 50,
+    "landcover": 10,
+    "terrain": 30,
+    "ndvi": 20
+  },
+  "soilgrids": {
+    "assets": "projects/soilgrids-isric/{prop}_mean",
+    "depths": [
+      "0-5cm",
+      "5-15cm",
+      "15-30cm"
+    ],
+    "weights_cm": [
+      5,
+      10,
+      15
+    ],
+    "factors": {
+      "soc": 10,
+      "bdod": 100,
+      "sand": 10,
+      "clay": 10,
+      "cfvo": 10
+    },
+    "ocs": "projects/soilgrids-isric/ocs_mean (band 0)"
+  },
+  "npp": {
+    "asset": "MODIS/061/MOD17A3HGF",
+    "year": 2024,
+    "band": "Npp",
+    "valid_range": [
+      -30000,
+      32700
+    ],
+    "to_gc_m2_yr": 0.1
+  },
+  "landcover": "ESA/WorldCover/v200 (2021): 10 tree, 40 cropland, 50 built-up, 80 water",
+  "terrain": "USGS/SRTMGL1_003 elevation; ee.Terrain.slope",
+  "ndvi": {
+    "collection": "COPERNICUS/S2_SR_HARMONIZED",
+    "start": "2024-06-01",
+    "months": 12,
+    "clear_scl": [
+      4,
+      5,
+      6,
+      7
+    ],
+    "composite": "median"
+  },
+  "reducer": "mean over unmasked pixels; *_valid_frac = mean of the validity mask"
+}
