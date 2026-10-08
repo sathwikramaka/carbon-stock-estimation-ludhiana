@@ -4,20 +4,27 @@
   "interpolation": {},
   "soc_experiment": {
     "n": 20000,
+    "n_features": 124,
     "target_sd": 1.8921,
     "validation": "5-fold GroupKFold over 8x8 geographic blocks",
     "models": [
       {
         "model": "Random forest",
-        "r2": 0.236,
-        "rmse": 1.6539,
-        "mae": 1.2734
+        "r2": 0.441,
+        "rmse": 1.4146,
+        "mae": 1.0765
+      },
+      {
+        "model": "Gradient boosting",
+        "r2": 0.4314,
+        "rmse": 1.4268,
+        "mae": 1.0928
       },
       {
         "model": "Coordinates only",
-        "r2": 0.2237,
-        "rmse": 1.6672,
-        "mae": 1.2489
+        "r2": 0.3193,
+        "rmse": 1.5611,
+        "mae": 1.1737
       },
       {
         "model": "Training mean",
@@ -28,93 +35,127 @@
     ],
     "permutation_importance": [
       {
-        "feature": "NDVI_Jan25",
-        "importance": 0.2595
+        "feature": "ndvi_mean",
+        "importance": 0.0824
       },
       {
-        "feature": "dem_m",
-        "importance": 0.0995
-      },
-      {
-        "feature": "NDVI_Aug24",
-        "importance": 0.0267
-      },
-      {
-        "feature": "NDVI_Apr25",
-        "importance": 0.0237
-      },
-      {
-        "feature": "slope_deg",
-        "importance": 0.0208
-      },
-      {
-        "feature": "tree_frac",
-        "importance": 0.0197
+        "feature": "coordinates",
+        "importance": 0.0668
       },
       {
         "feature": "NDVI_Nov24",
-        "importance": 0.018
+        "importance": 0.0532
       },
       {
-        "feature": "NDVI_Oct24",
-        "importance": 0.006
+        "feature": "dem_m",
+        "importance": 0.0359
       },
       {
-        "feature": "NDVI_Dec24",
-        "importance": 0.0049
-      },
-      {
-        "feature": "NDVI_Jul24",
-        "importance": 0.0049
-      },
-      {
-        "feature": "builtup_frac",
-        "importance": 0.0042
-      },
-      {
-        "feature": "NDVI_Feb25",
-        "importance": 0.0039
-      },
-      {
-        "feature": "NDVI_Mar25",
-        "importance": 0.0039
-      },
-      {
-        "feature": "NDVI_Sep24",
-        "importance": 0.0037
-      },
-      {
-        "feature": "NDVI_Jun24",
-        "importance": 0.0036
-      },
-      {
-        "feature": "NDVI_May25",
-        "importance": 0.0012
+        "feature": "tree_frac",
+        "importance": 0.0234
       },
       {
         "feature": "water_frac",
-        "importance": 0.0008
+        "importance": 0.0151
+      },
+      {
+        "feature": "NDVI_Jan25",
+        "importance": 0.0135
+      },
+      {
+        "feature": "NDVI_Apr25",
+        "importance": 0.0112
+      },
+      {
+        "feature": "NDVI_Oct24",
+        "importance": 0.0096
+      },
+      {
+        "feature": "NDVI_Jul24",
+        "importance": 0.0092
+      },
+      {
+        "feature": "NDVI_Mar25",
+        "importance": 0.0076
+      },
+      {
+        "feature": "NDVI_Aug24",
+        "importance": 0.0073
       },
       {
         "feature": "cropland_frac",
-        "importance": 0.0001
+        "importance": 0.0064
+      },
+      {
+        "feature": "slope_deg",
+        "importance": 0.0063
+      },
+      {
+        "feature": "NDVI_Dec24",
+        "importance": 0.0061
+      },
+      {
+        "feature": "NDVI_Feb25",
+        "importance": 0.006
+      },
+      {
+        "feature": "NDVI_Sep24",
+        "importance": 0.0054
+      },
+      {
+        "feature": "ndvi_kharif_peak",
+        "importance": 0.0046
+      },
+      {
+        "feature": "ndvi_rabi_peak",
+        "importance": 0.0037
+      },
+      {
+        "feature": "builtup_frac",
+        "importance": 0.0031
+      },
+      {
+        "feature": "ndvi_std",
+        "importance": 0.0026
+      },
+      {
+        "feature": "NDVI_Jun24",
+        "importance": 0.0025
+      },
+      {
+        "feature": "ndvi_amplitude",
+        "importance": 0.002
+      },
+      {
+        "feature": "ndvi_max",
+        "importance": 0.0019
+      },
+      {
+        "feature": "NDVI_May25",
+        "importance": -0.0
       }
     ],
     "unit": "t/ha (SoilGrids 0-30 cm stock)",
-    "features": "terrain, land cover, monthly NDVI",
+    "features": "terrain, land cover, monthly NDVI and NDVI statistics, each with 0.7-9 km neighbourhood means; coordinates",
     "with_soilgrids_properties": {
       "models": [
         {
           "model": "Random forest",
-          "r2": 0.3038,
-          "rmse": 1.5788,
-          "mae": 1.2091
+          "r2": 0.4695,
+          "rmse": 1.3781,
+          "mae": 1.0479
+        },
+        {
+          "model": "Gradient boosting",
+          "r2": 0.4622,
+          "rmse": 1.3876,
+          "mae": 1.0603
         },
         {
           "model": "Coordinates only",
-          "r2": 0.2237,
-          "rmse": 1.6672,
-          "mae": 1.2489
+          "r2": 0.3193,
+          "rmse": 1.5611,
+          "mae": 1.1737
         },
         {
           "model": "Training mean",
@@ -126,111 +167,164 @@
       "permutation_importance": [
         {
           "feature": "bdod_030",
-          "importance": 0.1352
+          "importance": 0.072
         },
         {
-          "feature": "NDVI_Jan25",
-          "importance": 0.0783
+          "feature": "ndvi_mean",
+          "importance": 0.0679
         },
         {
-          "feature": "sand_030",
-          "importance": 0.0612
+          "feature": "coordinates",
+          "importance": 0.0573
         },
         {
           "feature": "clay_030",
-          "importance": 0.0336
-        },
-        {
-          "feature": "slope_deg",
-          "importance": 0.0308
-        },
-        {
-          "feature": "dem_m",
-          "importance": 0.0303
-        },
-        {
-          "feature": "cfvo_030",
-          "importance": 0.0189
-        },
-        {
-          "feature": "tree_frac",
-          "importance": 0.0175
-        },
-        {
-          "feature": "NDVI_Aug24",
-          "importance": 0.0163
-        },
-        {
-          "feature": "NDVI_Apr25",
-          "importance": 0.0128
+          "importance": 0.0443
         },
         {
           "feature": "NDVI_Nov24",
-          "importance": 0.0099
+          "importance": 0.0376
         },
         {
-          "feature": "NDVI_Sep24",
-          "importance": 0.0099
+          "feature": "sand_030",
+          "importance": 0.0239
         },
         {
-          "feature": "NDVI_Dec24",
-          "importance": 0.0073
+          "feature": "tree_frac",
+          "importance": 0.0199
         },
         {
           "feature": "NDVI_Oct24",
-          "importance": 0.0033
-        },
-        {
-          "feature": "cropland_frac",
-          "importance": 0.003
-        },
-        {
-          "feature": "NDVI_Feb25",
-          "importance": 0.0022
-        },
-        {
-          "feature": "NDVI_May25",
-          "importance": 0.0021
-        },
-        {
-          "feature": "NDVI_Jun24",
-          "importance": 0.0018
-        },
-        {
-          "feature": "builtup_frac",
-          "importance": 0.0012
-        },
-        {
-          "feature": "NDVI_Jul24",
-          "importance": 0.0011
-        },
-        {
-          "feature": "NDVI_Mar25",
-          "importance": 0.0008
+          "importance": 0.0094
         },
         {
           "feature": "water_frac",
-          "importance": 0.0001
+          "importance": 0.0094
+        },
+        {
+          "feature": "cfvo_030",
+          "importance": 0.007
+        },
+        {
+          "feature": "NDVI_Feb25",
+          "importance": 0.0062
+        },
+        {
+          "feature": "NDVI_Jul24",
+          "importance": 0.0059
+        },
+        {
+          "feature": "NDVI_Jan25",
+          "importance": 0.0055
+        },
+        {
+          "feature": "cropland_frac",
+          "importance": 0.0054
+        },
+        {
+          "feature": "NDVI_Mar25",
+          "importance": 0.0046
+        },
+        {
+          "feature": "NDVI_Apr25",
+          "importance": 0.0045
+        },
+        {
+          "feature": "dem_m",
+          "importance": 0.0045
+        },
+        {
+          "feature": "ndvi_kharif_peak",
+          "importance": 0.0045
+        },
+        {
+          "feature": "slope_deg",
+          "importance": 0.0045
+        },
+        {
+          "feature": "NDVI_Aug24",
+          "importance": 0.0039
+        },
+        {
+          "feature": "NDVI_Sep24",
+          "importance": 0.0035
+        },
+        {
+          "feature": "ndvi_rabi_peak",
+          "importance": 0.0031
+        },
+        {
+          "feature": "ndvi_max",
+          "importance": 0.0025
+        },
+        {
+          "feature": "NDVI_Jun24",
+          "importance": 0.0021
+        },
+        {
+          "feature": "builtup_frac",
+          "importance": 0.0015
+        },
+        {
+          "feature": "NDVI_Dec24",
+          "importance": 0.0011
+        },
+        {
+          "feature": "ndvi_std",
+          "importance": 0.0006
+        },
+        {
+          "feature": "ndvi_amplitude",
+          "importance": 0.0002
+        },
+        {
+          "feature": "NDVI_May25",
+          "importance": 0.0002
         }
       ]
-    }
+    },
+    "ablation": [
+      {
+        "features": "cell covariates only",
+        "r2": 0.2587
+      },
+      {
+        "features": "+ NDVI statistics",
+        "r2": 0.2585
+      },
+      {
+        "features": "+ neighbourhood means",
+        "r2": 0.4346
+      },
+      {
+        "features": "+ coordinates (full model)",
+        "r2": 0.441
+      }
+    ]
   },
   "npp_experiment": {
     "n": 20000,
+    "n_features": 124,
     "target_sd": 59.6444,
     "validation": "5-fold GroupKFold over 8x8 geographic blocks",
     "models": [
       {
         "model": "Random forest",
-        "r2": 0.4012,
-        "rmse": 46.1527,
-        "mae": 37.6002
+        "r2": 0.508,
+        "rmse": 41.837,
+        "mae": 33.5892
+      },
+      {
+        "model": "Gradient boosting",
+        "r2": 0.4927,
+        "rmse": 42.4808,
+        "mae": 33.4076
       },
       {
         "model": "Coordinates only",
-        "r2": 0.3455,
-        "rmse": 48.253,
-        "mae": 37.9722
+        "r2": 0.427,
+        "rmse": 45.1477,
+        "mae": 36.3196
       },
       {
         "model": "Training mean",
@@ -241,79 +335,125 @@
     ],
     "permutation_importance": [
       {
+        "feature": "coordinates",
+        "importance": 0.2829
+      },
+      {
         "feature": "dem_m",
-        "importance": 0.5038
-      },
-      {
-        "feature": "NDVI_Jan25",
-        "importance": 0.0732
-      },
-      {
-        "feature": "slope_deg",
-        "importance": 0.0663
+        "importance": 0.0302
       },
       {
         "feature": "NDVI_Oct24",
-        "importance": 0.0553
-      },
-      {
-        "feature": "NDVI_Mar25",
-        "importance": 0.0137
+        "importance": 0.0267
       },
       {
         "feature": "NDVI_Apr25",
-        "importance": 0.0124
+        "importance": 0.0161
       },
       {
-        "feature": "NDVI_Aug24",
-        "importance": 0.0094
-      },
-      {
-        "feature": "NDVI_Jun24",
-        "importance": 0.0062
+        "feature": "NDVI_Jan25",
+        "importance": 0.0113
       },
       {
         "feature": "cropland_frac",
-        "importance": 0.0051
-      },
-      {
-        "feature": "NDVI_May25",
-        "importance": 0.0044
-      },
-      {
-        "feature": "NDVI_Jul24",
-        "importance": 0.004
-      },
-      {
-        "feature": "builtup_frac",
-        "importance": 0.0036
+        "importance": 0.0106
       },
       {
         "feature": "NDVI_Nov24",
-        "importance": 0.0031
+        "importance": 0.0105
       },
       {
         "feature": "tree_frac",
-        "importance": 0.0027
+        "importance": 0.0096
+      },
+      {
+        "feature": "ndvi_mean",
+        "importance": 0.0086
+      },
+      {
+        "feature": "NDVI_Mar25",
+        "importance": 0.0074
+      },
+      {
+        "feature": "builtup_frac",
+        "importance": 0.0067
+      },
+      {
+        "feature": "slope_deg",
+        "importance": 0.0067
+      },
+      {
+        "feature": "NDVI_Jun24",
+        "importance": 0.0059
+      },
+      {
+        "feature": "NDVI_Jul24",
+        "importance": 0.0043
+      },
+      {
+        "feature": "NDVI_May25",
+        "importance": 0.004
+      },
+      {
+        "feature": "ndvi_kharif_peak",
+        "importance": 0.0039
       },
       {
         "feature": "NDVI_Dec24",
-        "importance": 0.0025
+        "importance": 0.0037
       },
       {
         "feature": "NDVI_Feb25",
-        "importance": 0.0025
+        "importance": 0.0032
       },
       {
         "feature": "NDVI_Sep24",
+        "importance": 0.0028
+      },
+      {
+        "feature": "NDVI_Aug24",
+        "importance": 0.0022
+      },
+      {
+        "feature": "ndvi_amplitude",
+        "importance": 0.002
+      },
+      {
+        "feature": "ndvi_std",
         "importance": 0.0017
       },
       {
+        "feature": "ndvi_rabi_peak",
+        "importance": 0.0016
+      },
+      {
         "feature": "water_frac",
-        "importance": 0.0007
+        "importance": 0.0011
+      },
+      {
+        "feature": "ndvi_max",
+        "importance": 0.0008
       }
     ],
     "unit": "gC/m2/yr",
-    "features": "terrain, land cover, monthly NDVI"
+    "features": "terrain, land cover, monthly NDVI and NDVI statistics, each with 0.7-9 km neighbourhood means; coordinates",
+    "ablation": [
+      {
+        "features": "cell covariates only",
+        "r2": 0.4068
+      },
+      {
+        "features": "+ NDVI statistics",
+        "r2": 0.4061
+      },
+      {
+        "features": "+ neighbourhood means",
+        "r2": 0.501
+      },
+      {
+        "features": "+ coordinates (full model)",
+        "r2": 0.508
+      }
+    ]
   }
 }

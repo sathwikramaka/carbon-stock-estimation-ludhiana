@@ -32,9 +32,10 @@ MOD17 substantially underestimates productivity in this irrigated,
 double-cropped landscape.
 
 Random Forest models trained on a 20,000-cell sample with satellite covariates
-independent of their targets reach R² = 0.401 for net primary productivity and
-R² = 0.236 for soil organic carbon under spatial block cross-validation,
-against coordinates-only baselines of 0.346 and 0.224. The estimation pipeline
+independent of their targets, each with multi-scale neighbourhood means, reach
+R² = 0.508 for net primary productivity and R² = 0.441 for soil organic carbon
+under spatial block cross-validation, against coordinates-only baselines of
+0.427 and 0.319. The estimation pipeline
 is implemented end to end with a PostGIS spatial database, a MongoDB document
 store, a Flask REST API and an interactive web dashboard, also published as a
 public web application.
@@ -260,24 +261,41 @@ CO₂e = carbon × 44/12
 
 ### 4.3 Feature sets
 
-Both models use the same environmental covariates, all independent of the
-targets: elevation, slope, ESA WorldCover cropland, built-up, tree and water
-fractions, and twelve monthly Sentinel-2 NDVI composites (18 features). A
-comparison SOC model adds SoilGrids sand, clay, bulk density and coarse
-fragments (22 features). Coordinates, identifiers and the four position-proxy
-climate layers are excluded.
+Both models use the same covariates, none derived from the targets:
+
+| Group | Features |
+|---|---|
+| Cell covariates | elevation, slope; ESA WorldCover cropland, built-up, tree and water fractions; twelve monthly Sentinel-2 NDVI composites |
+| NDVI seasonal statistics | maximum, mean, standard deviation, kharif peak (Aug–Oct), rabi peak (Jan–Mar), amplitude |
+| Neighbourhood means | every covariate above averaged over 3, 9, 21 and 41-cell windows (~0.7, 2, 5 and 9 km) |
+| Coordinates | longitude, latitude and the two 45° rotations |
+
+This gives 124 features. Neighbourhood means are included because both targets
+are themselves gridded model outputs built at coarser support than the 250 m
+cell — MOD17 at 500 m with meteorology at tens of kilometres, SoilGrids from
+covariates at 250 m–1 km — so a cell's value depends on its surroundings as
+well as on the cell. Only covariates are smoothed, never a target, and every
+covariate is known for every cell at prediction time. A comparison SOC model
+adds SoilGrids sand, clay, bulk density and coarse fragments with their
+neighbourhood means. Identifiers and the four position-proxy climate layers are
+excluded; position enters only as explicit coordinates.
 
 ### 4.4 Models
 
-| Parameter | Random Forest |
+| Parameter | Random Forest | Gradient boosting (comparison) |
+|---|---|---|
+| Estimators / iterations | 300 | 600 |
+| Min samples leaf | 5 | 40 |
+| Features per split | one third | all |
+| Learning rate | — | 0.05 |
+| Random state | 42 | 42 |
+| Training sample | 20,000 cells | 20,000 cells |
+
+| Setting | Value |
 |---|---|
-| Estimators | 300 |
-| Min samples leaf | 5 |
-| Random state | 42 |
-| Training sample | 20,000 cells |
 | Validation | 5-fold GroupKFold over 8 × 8 geographic blocks |
 | Baselines | training-fold mean; Random Forest on longitude and latitude only |
-| Importance | permutation importance on held-out folds |
+| Importance | permutation importance on held-out folds, per covariate (all its scales permuted together) |
 
 Targets are SoilGrids `ocs` 0–30 cm (t/ha) and MOD17 NPP (gC/m²/yr).
 
@@ -432,11 +450,11 @@ the district's annual carbon fixation, not a standing pool.
 
 ### 6.1 Spatial cross-validation and baselines
 
-| Model | Random Forest R² | Coordinates only R² | Training mean R² | RF RMSE | Target SD |
-|---|---|---|---|---|---|
-| Above-ground (NPP, gC/m²/yr) | **0.401** | 0.346 | −0.019 | 46.2 | 59.6 |
-| Below-ground (SOC, t/ha) | **0.236** | 0.224 | −0.016 | 1.65 | 1.89 |
-| Below-ground + SoilGrids properties | 0.304 | 0.224 | −0.016 | 1.58 | 1.89 |
+| Model | Random Forest R² | Gradient boosting R² | Coordinates only R² | Training mean R² | RF RMSE | Target SD |
+|---|---|---|---|---|---|---|
+| Above-ground (NPP, gC/m²/yr) | **0.508** | 0.493 | 0.427 | −0.019 | 41.8 | 59.6 |
+| Below-ground (SOC, t/ha) | **0.441** | 0.431 | 0.319 | −0.016 | 1.41 | 1.89 |
+| Below-ground + SoilGrids properties | 0.470 | 0.462 | 0.319 | −0.016 | 1.38 | 1.89 |
 
 A random split places adjacent 250 m cells — and cells sharing one 500 m MODIS
 pixel — in both the training and test sets. Because neighbouring cells are
@@ -446,19 +464,31 @@ partitions the district into an 8 × 8 geographic grid and holds out whole
 blocks across five folds, so that no test cell has a training neighbour
 (Roberts et al., 2017; Ploton et al., 2020).
 
-Both models clearly outperform the mean baseline. The NPP model adds 0.055 R²
-over position alone, showing that terrain and the NDVI seasonal cycle carry
-local information about productivity. The SOC model adds 0.012: SoilGrids SOC
-varies little across the district (SD 1.9 t/ha around 31 t/ha), and most of
-that variation is a smooth regional gradient that coordinates already capture.
+Both models clearly outperform the mean baseline and the coordinates-only
+model: by 0.081 R² for NPP and 0.122 for SOC. Random Forest and gradient
+boosting agree within 0.015, so the result does not depend on the learner.
+
+**Feature-set ablation** (Random Forest, same folds):
+
+| Feature set | NPP R² | SOC R² |
+|---|---|---|
+| Cell covariates only | 0.407 | 0.259 |
+| + NDVI seasonal statistics | 0.406 | 0.259 |
+| + neighbourhood means (0.7–9 km) | 0.501 | 0.435 |
+| + coordinates (final model) | **0.508** | **0.441** |
+
+Neighbourhood context is the main source of skill: it raises SOC R² by 0.18 and
+NPP R² by 0.09. NDVI seasonal statistics add nothing beyond the monthly
+composites they summarise, and explicit coordinates add little once
+neighbourhood means are present.
 
 ### 6.2 Provenance of the below-ground result
 
 The main SOC model uses only covariates independent of SoilGrids, so its R²
 measures genuine predictive skill. Adding SoilGrids' own texture, bulk density
-and coarse-fragment layers raises R² to 0.304, with bulk density then the most
-important feature. Because those layers come from the same modelling system as
-the target, that run measures agreement within one product rather than
+and coarse-fragment layers raises R² to 0.470, with bulk density then the most
+important covariate. Because those layers come from the same modelling system
+as the target, that run measures agreement within one product rather than
 independent skill, and it is reported for comparison only.
 
 Two properties of the training data are essential to these figures being
@@ -474,17 +504,21 @@ Feature importance is reported as permutation importance measured on held-out
 spatial folds. Impurity-based importance, the default in Random Forest
 implementations, systematically favours continuous predictors with many
 candidate split points and can misrepresent the model's dependencies (Strobl
-et al., 2007).
+et al., 2007). Each covariate is permuted together with its neighbourhood
+means, so the importance of correlated scales is not split between them.
 
 | Rank | NPP model | Importance | SOC model | Importance |
 |---|---|---|---|---|
-| 1 | Elevation | 0.504 | NDVI January 2025 | 0.260 |
-| 2 | NDVI January 2025 | 0.073 | Elevation | 0.100 |
-| 3 | Slope | 0.066 | NDVI August 2024 | 0.027 |
-| 4 | NDVI October 2024 | 0.055 | NDVI April 2025 | 0.024 |
+| 1 | Coordinates | 0.283 | NDVI annual mean | 0.082 |
+| 2 | Elevation | 0.030 | Coordinates | 0.067 |
+| 3 | NDVI October 2024 | 0.027 | NDVI November 2024 | 0.053 |
+| 4 | NDVI April 2025 | 0.016 | Elevation | 0.036 |
 
-January NDVI marks the rabi wheat canopy and October NDVI the kharif harvest
-transition, so the models draw on the crop calendar as well as terrain.
+For NPP, position dominates: MOD17 is driven by meteorology at tens of
+kilometres, which appears to the model as a regional gradient. For SOC, the
+NDVI annual mean and the post-kharif November composite (residue cover and
+rabi sowing) lead, followed by position and elevation — the crop calendar and
+the Sutlej floodplain gradient.
 
 ### 6.4 Climate covariates as position proxies
 
@@ -549,7 +583,7 @@ estimate covers rice and wheat only and is a lower bound.
 would require allometric relationships, canopy height retrieval, radar
 backscatter, or a dedicated biomass product such as GEDI or ESA CCI Biomass.
 
-**7.7 Moderate model skill.** Satellite covariates explain 40% of NPP and 24% of
+**7.7 Moderate model skill.** Satellite covariates explain 51% of NPP and 44% of
 SOC variation under spatial validation; the models describe spatial pattern and
 are not used for the totals.
 
@@ -629,9 +663,10 @@ magnitude below the 3.34 MtC/yr lower bound implied by the district's rice and
 wheat yields; MOD17 is not suitable for crop carbon flux in this landscape.
 
 Random Forest models with satellite covariates independent of their targets
-achieve R² = 0.401 for NPP and 0.236 for SOC under spatial block
-cross-validation, above coordinates-only baselines. Terrain and the NDVI crop
-calendar carry the predictive signal. The full workflow — extraction, quality
+achieve R² = 0.508 for NPP and 0.441 for SOC under spatial block
+cross-validation, above gradient boosting and coordinates-only baselines.
+Multi-scale neighbourhood means of terrain, land cover and the NDVI crop
+calendar carry most of the predictive signal. The full workflow — extraction, quality
 checks, carbon accounting, uncertainty, modelling, databases, API and
 dashboard — is reproducible from the repository.
 

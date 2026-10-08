@@ -357,7 +357,7 @@ html,body{height:100%;background:var(--b0);color:var(--t1);font-family:var(--fb)
     <div id="map-footer">
       <div class="mfp" id="mf-source">data: —</div>
       <div class="mfp">250 m × 250 m nominal · geodesic area per cell</div>
-      <div class="mfp">Basemaps: Esri imagery · OpenStreetMap · CARTO</div>
+      <div class="mfp">Basemaps: Esri imagery &amp; canvas · OpenStreetMap</div>
     </div>
   </div>
 </section>
@@ -392,7 +392,7 @@ html,body{height:100%;background:var(--b0);color:var(--t1);font-family:var(--fb)
 
 <!-- ══ MODEL ══ -->
 <section class="page" id="page-model"><div class="section">
-  <div class="ph2"><div class="pey">MACHINE LEARNING</div><h1>Random Forest Models</h1><p>Above-ground (NPP) and below-ground (SOC) random forests trained on a 20,000-cell sample and validated by 5-fold cross-validation over 8 × 8 geographic blocks, against a coordinates-only model and the training mean.</p></div>
+  <div class="ph2"><div class="pey">MACHINE LEARNING</div><h1>Random Forest Models</h1><p>Above-ground (NPP) and below-ground (SOC) random forests on a 20,000-cell sample: terrain, land cover and Sentinel-2 NDVI, each with 0.7–9 km neighbourhood means, plus coordinates. Validated by 5-fold cross-validation over 8 × 8 geographic blocks against gradient boosting, a coordinates-only model and the training mean.</p></div>
   <div class="tab-row">
     <button class="tab active" onclick="showTab('tm',this)">Accuracy</button>
     <button class="tab" onclick="showTab('tf',this)">Feature importance</button>
@@ -401,7 +401,7 @@ html,body{height:100%;background:var(--b0);color:var(--t1);font-family:var(--fb)
   <div class="tp active" id="tm"><div class="two-col">
     <div class="mc">
       <div class="mc-top">
-        <div><div class="mc-ti" style="color:#0ea5e9">Below-ground (SOC) model</div><div class="mc-su">Target: SoilGrids ocs 0–30 cm stock (t/ha) · terrain, land cover, monthly NDVI</div></div>
+        <div><div class="mc-ti" style="color:#0ea5e9">Below-ground (SOC) model</div><div class="mc-su">Target: SoilGrids ocs 0–30 cm stock (t/ha) · satellite covariates + neighbourhood means</div></div>
         <svg width="80" height="80" viewBox="0 0 100 100" style="margin-left:auto;flex-shrink:0">
           <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(14,165,233,.12)" stroke-width="7"/>
           <circle cx="50" cy="50" r="40" fill="none" stroke="#0ea5e9" stroke-width="7" stroke-dasharray="251.2" stroke-dashoffset="251.2" id="ring-soc" stroke-linecap="round" style="transform:rotate(-90deg);transform-origin:50px 50px;transition:stroke-dashoffset 1.8s cubic-bezier(.4,0,.2,1);filter:drop-shadow(0 0 6px #0ea5e9)"/>
@@ -414,7 +414,7 @@ html,body{height:100%;background:var(--b0);color:var(--t1);font-family:var(--fb)
     </div>
     <div class="mc">
       <div class="mc-top">
-        <div><div class="mc-ti" style="color:#00ff88">Above-ground (NPP) model</div><div class="mc-su">Target: MOD17 NPP (gC/m²/yr) · terrain, land cover, monthly NDVI</div></div>
+        <div><div class="mc-ti" style="color:#00ff88">Above-ground (NPP) model</div><div class="mc-su">Target: MOD17 NPP (gC/m²/yr) · satellite covariates + neighbourhood means</div></div>
         <svg width="80" height="80" viewBox="0 0 100 100" style="margin-left:auto;flex-shrink:0">
           <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(0,255,136,.12)" stroke-width="7"/>
           <circle cx="50" cy="50" r="40" fill="none" stroke="#00ff88" stroke-width="7" stroke-dasharray="251.2" stroke-dashoffset="251.2" id="ring-npp" stroke-linecap="round" style="transform:rotate(-90deg);transform-origin:50px 50px;transition:stroke-dashoffset 1.8s cubic-bezier(.4,0,.2,1) .3s;filter:drop-shadow(0 0 6px #00ff88)"/>
@@ -426,7 +426,7 @@ html,body{height:100%;background:var(--b0);color:var(--t1);font-family:var(--fb)
       <div class="mc-note" id="npp-note">—</div>
     </div>
   </div></div>
-  <div class="tp" id="tf"><div class="panel"><div class="ph"><span class="pt">Permutation importance — NPP model</span><span class="ptag">measured on held-out spatial folds</span></div><div style="height:420px"><canvas id="chart-fi"></canvas></div></div></div>
+  <div class="tp" id="tf"><div class="panel"><div class="ph"><span class="pt">Permutation importance — NPP model</span><span class="ptag">per covariate (all scales) · held-out spatial folds</span></div><div style="height:420px"><canvas id="chart-fi"></canvas></div></div></div>
   <div class="tp" id="tc"><div class="panel"><div class="ph"><span class="pt">Every validation result</span><span class="ptag">spatial blocks unless stated</span></div><div style="overflow-x:auto"><table class="dt"><thead><tr><th>Target</th><th>Method</th><th>R²</th><th>RMSE</th><th>MAE</th><th>n</th></tr></thead><tbody id="cmp-tbody"></tbody></table></div></div></div>
 </div></section>
 
@@ -453,6 +453,6 @@ html,body{height:100%;background:var(--b0);color:var(--t1);font-family:var(--fb)
 </div></section>
 
 <div id="ldr"><div class="ldr-ring"></div><div class="ldr-txt">INITIALISING</div></div>
-<script src="/static/main.js?v=12"></script>
+<script src="/static/main.js?v=13"></script>
 </body>
 </html>
