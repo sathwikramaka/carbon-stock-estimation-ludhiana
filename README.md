@@ -337,6 +337,12 @@ Dashboard at `http://localhost:5000` (or double-click
 `DB_MODE` in `.env` selects `files` (default, reads `results/`), `local`
 (PostgreSQL + MongoDB, loaded by notebook 03) or `cloud` (Supabase + MongoDB
 Atlas). Database modes fall back to the files if a database is unreachable.
+The map footer shows which source answered (`data: local` or
+`data: files-fallback`); if it falls back, open
+`http://localhost:5000/api/health`, which states the reason for each
+database (wrong password, PostGIS missing, an old `grid_cells` table, empty
+collections), and re-run `03_publish_databases.ipynb`, whose last cell stops
+with an error if a database was not loaded.
 
 Public version: `streamlit run app/streamlit_app.py` serves the same dashboard
 without Flask; it is deployed at
