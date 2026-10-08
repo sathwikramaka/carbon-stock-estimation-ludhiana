@@ -79,7 +79,7 @@ copy .env.example .env                                   # then edit if using da
 | 0 | `notebooks/00_gee_extraction.ipynb` | Earth Engine project `my-projects-510917` | `data/v2/ludhiana_cells_v2.csv.gz` (committed) |
 | 1 | `notebooks/01_data_audit.ipynb` | raw exports | `results/audit_findings.json`, figures |
 | 2 | `notebooks/02_carbon_pipeline.ipynb` | v2 table (falls back to v1 exports) | `results/` — every published number |
-| 3 (optional) | `notebooks/03_publish_databases.ipynb` | PostgreSQL/PostGIS, MongoDB | database copies of `results/` |
+| 3 (optional) | `notebooks/03_publish_databases.ipynb` | PostgreSQL 16 + PostGIS, MongoDB (either alone works) | loads `results/` into both, verifies totals, PostGIS spatial-join and MongoDB aggregation examples; enables `DB_MODE=local` |
 | 4 | `notebooks/04_location_map.ipynb` | internet (first run) | `boundaries/punjab_*`, `results/fig_location.png` |
 | 5 | `notebooks/05_soilgrids_uncertainty.ipynb` | `maps.isric.org` reachable, or the four GeoTIFFs it lists | `results/soilgrids_uncertainty.json` (re-run 02 after) |
 
@@ -95,7 +95,7 @@ python app.py                      # http://localhost:5000
 to the files if a database is unreachable, and every response says which
 source it used.
 
-Tests: `pytest tests/` (46 tests; those needing `results/carbon_cells.csv` skip
+Tests: `pytest tests/` (47 tests; those needing `results/carbon_cells.csv` skip
 until the pipeline has run).
 
 ## Layout
