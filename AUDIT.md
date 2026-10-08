@@ -262,8 +262,10 @@ fails if the mean density drops back below 20 tC/ha.
 
 ## Still open
 
-1. Propagate SoilGrids uncertainty (download the `ocs` Q0.05/Q0.95 layers from
-   ISRIC WCS for the district bounding box).
+1. Propagate SoilGrids uncertainty: `05_soilgrids_uncertainty.ipynb` is
+   written and tested, but `maps.isric.org` is blocked from both the cloud
+   session and the project PC (proxy 403). Download the four GeoTIFFs it
+   prints, or allow the domain, then run 05 and 02.
 2. Decide how to report crop flux given F4.
 3. Field samples, if any become available, to validate SoilGrids locally —
    especially given the `ocs` vs SOC × BD disagreement.
