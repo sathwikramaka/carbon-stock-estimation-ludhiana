@@ -66,6 +66,20 @@ cross-check, and a dashboard that serves exactly what the analysis produced.
    data a random forest barely beats position alone (ocs R² 0.20 vs 0.17;
    NPP 0.34 vs 0.32) and produces no published number.
 
+## Public app
+
+A Streamlit version of the results (`app/streamlit_app.py`) is deployed on
+Streamlit Community Cloud. It reads only `results/` and the boundaries, so it
+always shows the last pipeline run. Run it locally with:
+
+```bash
+pip install -r app/requirements.txt
+streamlit run app/streamlit_app.py
+```
+
+The Flask dashboard in `dashboard/` remains the local version with the
+PostgreSQL/MongoDB modes used in notebook 03.
+
 ## Run it
 
 ```bash
@@ -97,7 +111,7 @@ On Windows you can double-click `dashboard/run_dashboard.bat` instead.
 to the files if a database is unreachable, and every response says which
 source it used.
 
-Tests: `pytest tests/` (47 tests; those needing `results/carbon_cells.csv` skip
+Tests: `pytest tests/` (49 tests; those needing `results/carbon_cells.csv` skip
 until the pipeline has run).
 
 ## Layout
@@ -110,7 +124,8 @@ data/boundaries/           district and state boundaries (geoBoundaries, Datamee
 data/v2/                   v2 census table + manifest (per-layer CSVs and chunks are git-ignored)
 data/soilgrids_quantiles/  SoilGrids ocs quantile GeoTIFFs (native Homolosine)
 results/                   pipeline outputs: the only source the dashboard reads
-dashboard/                 Flask backend + Leaflet/Chart.js frontend
+app/                       public Streamlit app (Community Cloud)
+dashboard/                 Flask backend + Leaflet/Chart.js frontend (local, database modes)
 tests/                     invariants for keys, units, QC, estimators, results, API
 docs/                      AUDIT.md (defects, evidence, fixes) · REPORT.md · DATA_DICTIONARY.md
 archive/                   superseded scripts, documents and outputs (history only)
