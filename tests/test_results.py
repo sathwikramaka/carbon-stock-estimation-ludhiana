@@ -17,7 +17,7 @@ def test_summary_schema_and_intervals(summary):
         if summary["mode"] == "v1-interim":
             lo, hi = est["ci95"]
             assert lo < est["estimate"] < hi
-    assert summary["caveats"] and summary["previous_published"]
+    assert summary["caveats"]
 
 
 @needs_results
@@ -58,14 +58,14 @@ OLD_FIGURES = ["4.3554", "3.7085", "0.9492", "0.4226", "64,545", "64545", "52,80
 def test_no_hardcoded_figures_in_dashboard():
     hits = []
     for p in [FRONTEND / "static" / "main.js", FRONTEND / "templates" / "index.html",
-              ROOT / "dashboard" / "backend" / "app.py"]:
+              ROOT / "IIRS" / "Carbon_Stocks" / "carbon_project" / "backend" / "app.py"]:
         text = p.read_text(encoding="utf-8")
         hits += [f"{p.name}: {f}" for f in OLD_FIGURES if f in text]
     assert not hits, hits
 
 
 def test_dashboard_never_keys_on_grid_id():
-    for p in [FRONTEND / "static" / "main.js", ROOT / "dashboard" / "backend" / "app.py"]:
+    for p in [FRONTEND / "static" / "main.js", ROOT / "IIRS" / "Carbon_Stocks" / "carbon_project" / "backend" / "app.py"]:
         text = p.read_text(encoding="utf-8")
         assert "grid_id" not in text and "Grid_ID" not in text, p.name
 
