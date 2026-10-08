@@ -506,8 +506,8 @@ async function loadAnalytics(){
       `Reported Ludhiana wheat and paddy yields, converted with IPCC (2019) factors, put at least `+
       `${crop.total_mtc_median.toFixed(2)} MtC/yr (90% range ${crop.total_mtc_p05_p95[0].toFixed(2)}–${crop.total_mtc_p05_p95[1].toFixed(2)}) `+
       `through the district's two main crops. Correctly scaled MOD17 reports ${npp.flux_mtc_per_year.estimate.toFixed(3)} MtC/yr — `+
-      `${(crop.mod17_over_crop_ratio*100).toFixed(1)}% of that lower bound — and negative annual NPP in `+
-      `${npp.negative_share_agricultural!=null?(npp.negative_share_agricultural*100).toFixed(0)+"%":"some"} of agricultural cells. `+
+      `${(crop.mod17_over_crop_ratio*100).toFixed(1)}% of that lower bound`+
+      (npp.negative_share_agricultural>0?` — and negative annual NPP in ${(npp.negative_share_agricultural*100).toFixed(0)}% of agricultural cells`:"")+`. `+
       `The old dashboard figure looked plausible only because the product's scale factor had been skipped, inflating it tenfold.`);
   }
 

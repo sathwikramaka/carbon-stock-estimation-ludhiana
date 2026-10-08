@@ -618,4 +618,33 @@ write them are `02_carbon_pipeline.ipynb` and `01_data_audit.ipynb`.
 
 ## Appendix B — Dashboard
 
-`[FILL IN: screenshots of the home, map, analytics, model and explorer pages]`
+The dashboard (`dashboard/`, started with `python app.py` or
+`dashboard/run_dashboard.bat`) serves only what `02_carbon_pipeline.ipynb`
+wrote to `results/`, or the database copies loaded by
+`03_publish_databases.ipynb`; every response names its source. Screenshots
+taken 8 October 2026 from the v2 census run.
+
+![Home: headline figures with the SoilGrids 90% interval](screenshots/home.jpg)
+
+*Figure B1.* Home. Headline soil stock, mean density, MOD17 flux and the
+crop-yield cross-check, with SoilGrids' own 90% interval under the stock.
+
+![Map: SOC stock layer over Esri imagery](screenshots/map.jpg)
+
+*Figure B2.* Map. A random sample of cells coloured by SOC stock (tC/ha);
+clicking loads every 250 m cell around the point. Basemap © Esri.
+
+![Analytics: estimates and sensitivity](screenshots/analytics.jpg)
+
+*Figure B3.* Analytics. Boundary and method sensitivities, the MOD17 vs
+crop-yield comparison and monthly Sentinel-2 NDVI.
+
+![Model: machine-learning experiment](screenshots/model.jpg)
+
+*Figure B4.* Model. The random-forest experiment is reported only for the v1
+data; in census mode no model is needed, and the page says so.
+
+![Explorer: per-cell table](screenshots/explorer.jpg)
+
+*Figure B5.* Explorer. All 71,197 cells with each value's source, filterable
+and exportable page by page.
