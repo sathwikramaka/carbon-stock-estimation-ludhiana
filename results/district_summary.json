@@ -42,7 +42,19 @@
       }
     ],
     "ocs_crosscheck_ratio": 1.352,
-    "soilgrids_uncertainty": "not yet computed: run 05_soilgrids_uncertainty.ipynb"
+    "soilgrids_uncertainty": {
+      "headline_mean_mtc": 10.507,
+      "median_q50_mtc": 8.205,
+      "correlated_90pct_mtc": [
+        2.173,
+        27.685
+      ],
+      "independent_90pct_mtc": [
+        10.457,
+        10.558
+      ],
+      "soil_area_ha": 341413
+    }
   },
   "npp": {
     "flux_mtc_per_year": {
@@ -122,7 +134,7 @@
     "why_superseded": "SOC_mean is SoilGrids ocs in t/ha but was read as SOC content (F14); SOC model learned unmasked-nodata dilution; MOD17 scale factor skipped; 2,155 real cells deleted by Grid_ID de-duplication"
   },
   "caveats": [
-    "Soil stocks are SoilGrids 2.0 ocs model predictions, not field measurements; SoilGrids' own uncertainty is not propagated (ocs quantile layers are not on Earth Engine). Rebuilding the stock from SoilGrids SOC x BD instead gives about 1.4x more.",
+    "Soil stocks are SoilGrids 2.0 ocs model predictions, not field measurements. SoilGrids' own 90% prediction interval, summed with fully correlated errors, puts the district stock at 2.173-27.685 MtC (05_soilgrids_uncertainty.ipynb). Rebuilding the stock from SoilGrids SOC x BD instead gives about 1.4x more.",
     "MOD17 NPP captures about 10% of the crop-yield lower bound in 2024; it is not fit for crop carbon flux here.",
     "Soil stock (tC) and NPP flux (tC/yr) have different dimensions and are never summed.",
     "Neither figure is a carbon-credit quantity: no baseline, additionality, permanence or field verification."

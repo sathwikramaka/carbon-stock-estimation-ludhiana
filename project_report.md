@@ -35,8 +35,10 @@ The 0–30 cm SOC stock is **10.54 MtC**, a mean of 30.77 tC/ha over 342,426 ha
 of valid soil; the Census 2011 boundary gives 10.18 MtC, and an independent
 design-based estimate from the repaired v1 sample gives 10.12 MtC (95% CI
 10.11–10.12) over the smaller v1 grid. Rebuilding the stock from SoilGrids'
-SOC and bulk density layers instead gives 14.46 MtC, a 1.35-fold model
-disagreement that no sampling interval captures. Correctly scaled MOD17 NPP for
+SOC and bulk density layers instead gives 14.46 MtC, and SoilGrids' own 90%
+prediction interval, propagated with fully correlated errors, spans 2.2–27.7
+MtC: the stock is known to within an order of magnitude until it is checked
+against field samples. Correctly scaled MOD17 NPP for
 2024 is **0.335 MtC/yr**, 10% of an independent lower bound of **3.34 MtC/yr**
 (90% range 2.70–4.07) computed from reported rice and wheat yields, so MOD17 is
 not fit for crop carbon flux in this landscape. The results are served by a
@@ -366,10 +368,25 @@ density (30.68 vs 30.77 tC/ha); its lower total reflects the v1 grid's smaller
 soil area. The difference that matters is between SoilGrids' two routes to a
 stock: 10.5 MtC from `ocs` and 14.5 MtC from SOC × BD. Both are model
 predictions, neither has been checked against field samples in Ludhiana, and
-the 1.35-fold gap between them is a lower bound on the stock's real
-uncertainty. The v1 sampling interval (±0.01 MtC) measures only how well
-20,000 cells represent 66,700 and should not be read as the uncertainty of
-the stock.
+the 1.35-fold gap between them is only part of the stock's real
+uncertainty. SoilGrids publishes 5%, 50% and 95% quantiles of `ocs`; fetched on
+its native Homolosine grid (agreement with the Earth Engine mean: r = 0.96,
+median ratio 1.00), they give a median per-cell 90% interval of 7–82 t/ha
+around a mean of 31 t/ha. Because SoilGrids does not publish how errors
+correlate between pixels, two limits are reported:
+
+| Error assumption | District stock, 90% interval |
+|---|---|
+| Fully correlated (Σ quantiles) | **2.2–27.7 MtC** |
+| Independent between cells | 10.46–10.56 MtC |
+
+A model's errors across one flat district share covariates and structure, so
+the correlated bound is the realistic one; the independent bound shows how
+far a naive sum would understate the uncertainty. The v1 sampling interval
+(±0.01 MtC) measures only how well 20,000 cells represent 66,700 and should
+not be read as the uncertainty of the stock either.
+
+![SoilGrids uncertainty](results/fig_soilgrids_uncertainty.png)
 
 ### 6.2 Net primary production
 
@@ -470,8 +487,9 @@ result — little skill beyond position — is informative in its own right.
 ## 8. Limitations
 
 1. **No field measurements.** SOC values are SoilGrids predictions; their local
-   accuracy in Ludhiana is unknown, and their uncertainty is not propagated.
-   SoilGrids' two routes to a stock differ 1.35-fold here (Section 6.1).
+   accuracy in Ludhiana is unknown. SoilGrids' own 90% interval for the
+   district stock is 2.2–27.7 MtC, and its two routes to a stock differ
+   1.35-fold (Section 6.1).
 2. **Boundary.** The headline uses geoBoundaries ADM2 (369,961 ha), 1.8% below
    the Census 2011 figure of 376,700 ha; the Census-derived Datameet polygon
    gives 3% less stock. Neither is an official Survey of India boundary.
@@ -494,14 +512,12 @@ result — little skill beyond position — is informative in its own right.
 The re-extraction (Section 5.7) has been run and its census is the headline.
 In order of value:
 
-1. Propagate SoilGrids uncertainty from its published `ocs` quantile layers
-   (ISRIC WCS; they are not on Earth Engine). `05_soilgrids_uncertainty.ipynb`
-   reports two bounds, because SoilGrids does not publish error correlation:
-   fully correlated (Σ Q0.05 … Σ Q0.95, the honest one to quote) and
-   independent (far narrower, shown to illustrate how much a naive sum
-   understates).
-2. Validate SoilGrids locally against Soil Health Card or other soil-test
-   data, which would also show which of the two stock routes is closer.
+1. Validate SoilGrids locally against Soil Health Card or other soil-test
+   data. With a 90% interval of 2.2–27.7 MtC, this is the only step that can
+   make the stock useful for decisions.
+2. Use those samples to fit a local error model (or a regression-kriging
+   correction of SoilGrids), which would also show which of the two stock
+   routes is closer.
 3. Replace MOD17 for crop flux with the yield-based estimate or a crop-specific
    light-use-efficiency model.
 4. For any carbon-credit use, follow VM0042: measured baselines, re-measurement

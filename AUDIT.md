@@ -222,9 +222,10 @@ Both `requirements.txt` files were UTF-16 with a Windows-only `pywinpty` pin.
 | SOC model spatial R² | 0.9492 | 0.200 (coordinates alone 0.173) | not needed — every cell observed |
 | Cells | 64,545 | 66,700 | 71,197 (area-weighted inside the boundary) |
 
-The census stock is model output (SoilGrids), not measurement. Its
-uncertainty is dominated by SoilGrids itself, which is not propagated; the
-1.35× gap between `ocs` and SOC × BD × 30 is a lower bound on how large that is.
+The census stock is model output (SoilGrids), not measurement. SoilGrids' own
+90% prediction interval, propagated with fully correlated errors, is
+**2.2–27.7 MtC** (`05_soilgrids_uncertainty.ipynb`); the 1.35× gap between
+`ocs` and SOC × BD × 30 sits well inside it.
 
 ## F13 — First rebuild dropped low-*w* cells from the soil total
 
@@ -262,10 +263,9 @@ fails if the mean density drops back below 20 tC/ha.
 
 ## Still open
 
-1. Propagate SoilGrids uncertainty: `05_soilgrids_uncertainty.ipynb` is
-   written and tested, but `maps.isric.org` is blocked from both the cloud
-   session and the project PC (proxy 403). Download the four GeoTIFFs it
-   prints, or allow the domain, then run 05 and 02.
+1. ~~Propagate SoilGrids uncertainty~~ — done (`05_soilgrids_uncertainty.ipynb`):
+   90% interval 2.2–27.7 MtC with fully correlated errors, per-cell 7–82 t/ha.
+   Narrowing it needs field data (item 3).
 2. Decide how to report crop flux given F4.
 3. Field samples, if any become available, to validate SoilGrids locally —
    especially given the `ocs` vs SOC × BD disagreement.
