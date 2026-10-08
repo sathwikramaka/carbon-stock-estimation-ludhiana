@@ -16,6 +16,7 @@ cross-check, and a dashboard that serves exactly what the analysis produced.
 |---|---|---|
 | Soil organic carbon stock, 0–30 cm (SoilGrids `ocs`) | **10.54 MtC** | 10.18 MtC inside the Census 2011 (Datameet) boundary; 10.12 MtC from the repaired v1 sample |
 | Mean SOC density over valid soil (342,426 ha) | **30.77 tC/ha** | v1 sample 30.68 tC/ha |
+| SoilGrids' own 90% interval for the stock (errors fully correlated) | **2.2–27.7 MtC** | per cell 7–82 t/ha around a mean of 31 |
 | MOD17 net primary production 2024, as the product reports | **0.335 MtC/yr** | 0.95 tC/ha/yr over 351,622 ha |
 | Rice + wheat NPP from reported yields (lower bound) | **3.34 MtC/yr** | 90% range 2.70–4.07 |
 
@@ -28,6 +29,11 @@ cross-check, and a dashboard that serves exactly what the analysis produced.
   median factor of 1.35 here; the headline uses `ocs`, the product's own stock
   prediction, and the gap is a measure of model uncertainty that no interval
   above includes.
+- **The stock is known only to within a factor of ~10.** SoilGrids' published
+  90% prediction interval for `ocs` is about 7–82 t/ha per cell. Summed with
+  fully correlated errors (the realistic case for a model's errors across one
+  district) that gives 2.2–27.7 MtC. Assuming independent errors would give
+  ±0.05 MtC, which is false precision. Field samples are the only way to narrow it.
 - The stock and the flux have different dimensions and are never summed.
 - MOD17 captures about 10% of the carbon that demonstrably passes through the
   district's crops. It is not fit for crop carbon flux here (AUDIT.md, F4).

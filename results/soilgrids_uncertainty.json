@@ -1,0 +1,41 @@
+{
+  "source": "ISRIC SoilGrids 2.0 ocs 0-30cm Q0.05/Q0.5/Q0.95/mean, WCS maps.isric.org, native Homolosine 250 m, 5x5 within-cell mean",
+  "units_check": {
+    "r_vs_earth_engine_ocs": 0.96,
+    "median_ratio": 1.0
+  },
+  "median_cell_quantiles_t_ha": {
+    "Q0.05": 7.0,
+    "Q0.5": 24.0,
+    "Q0.95": 82.0,
+    "mean": 31.0
+  },
+  "median_cell_relative_90pct_width": 2.418,
+  "ludhiana_geoboundaries_adm2": {
+    "headline_mean_mtc": 10.507,
+    "median_q50_mtc": 8.205,
+    "correlated_90pct_mtc": [
+      2.173,
+      27.685
+    ],
+    "independent_90pct_mtc": [
+      10.457,
+      10.558
+    ],
+    "soil_area_ha": 341413
+  },
+  "ludhiana_census2011_datameet": {
+    "headline_mean_mtc": 10.154,
+    "median_q50_mtc": 7.942,
+    "correlated_90pct_mtc": [
+      2.099,
+      26.714
+    ],
+    "independent_90pct_mtc": [
+      10.105,
+      10.204
+    ],
+    "soil_area_ha": 330077
+  },
+  "reading": "SoilGrids does not publish error correlation. The correlated interval is the honest one to quote; the independent interval shows how far a naive sum would understate uncertainty."
+}
