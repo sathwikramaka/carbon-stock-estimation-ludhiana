@@ -1,6 +1,6 @@
 {
   "mode": "v2-census",
-  "run_date": "2026-10-07",
+  "run_date": "2026-10-08",
   "status": "census",
   "district": "Ludhiana, Punjab, India",
   "grid": {
@@ -41,7 +41,8 @@
         "estimate": 14.4565
       }
     ],
-    "ocs_crosscheck_ratio": 1.352
+    "ocs_crosscheck_ratio": 1.352,
+    "soilgrids_uncertainty": "not yet computed: run 05_soilgrids_uncertainty.ipynb"
   },
   "npp": {
     "flux_mtc_per_year": {

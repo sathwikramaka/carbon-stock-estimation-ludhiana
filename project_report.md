@@ -495,7 +495,11 @@ The re-extraction (Section 5.7) has been run and its census is the headline.
 In order of value:
 
 1. Propagate SoilGrids uncertainty from its published `ocs` quantile layers
-   (ISRIC WCS; they are not on Earth Engine).
+   (ISRIC WCS; they are not on Earth Engine). `05_soilgrids_uncertainty.ipynb`
+   reports two bounds, because SoilGrids does not publish error correlation:
+   fully correlated (Σ Q0.05 … Σ Q0.95, the honest one to quote) and
+   independent (far narrower, shown to illustrate how much a naive sum
+   understates).
 2. Validate SoilGrids locally against Soil Health Card or other soil-test
    data, which would also show which of the two stock routes is closer.
 3. Replace MOD17 for crop flux with the yield-based estimate or a crop-specific

@@ -14,6 +14,9 @@ nbformat>=5.10
 # Earth Engine re-extraction (notebook 00)
 earthengine-api>=1.4
 
+# SoilGrids quantile layers (notebook 05)
+rasterio>=1.4
+
 # Databases and dashboard (notebook 03, backend)
 pymongo>=4.6
 psycopg2-binary>=2.9

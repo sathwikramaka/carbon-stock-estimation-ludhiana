@@ -75,6 +75,7 @@ copy .env.example .env                                   # then edit if using da
 | 2 | `notebooks/02_carbon_pipeline.ipynb` | v2 table (falls back to v1 exports) | `results/` — every published number |
 | 3 (optional) | `notebooks/03_publish_databases.ipynb` | PostgreSQL/PostGIS, MongoDB | database copies of `results/` |
 | 4 | `notebooks/04_location_map.ipynb` | internet (first run) | `boundaries/punjab_*`, `results/fig_location.png` |
+| 5 | `notebooks/05_soilgrids_uncertainty.ipynb` | `maps.isric.org` reachable, or the four GeoTIFFs it lists | `results/soilgrids_uncertainty.json` (re-run 02 after) |
 
 Dashboard (no database needed):
 
@@ -96,7 +97,7 @@ until the pipeline has run).
 ```
 config.py                  constants, cell key, soil QC, loaders
 estimators.py              survey estimators, interpolation, crop NPP, census totals
-notebooks/                 00 extraction · 01 audit · 02 pipeline · 03 publish
+notebooks/                 00 extraction · 01 audit · 02 pipeline · 03 publish · 04 map · 05 uncertainty
 results/                   pipeline outputs (the only source the dashboard reads)
 IIRS/Carbon_Stocks/        raw Earth Engine exports (v1), boundaries/, v2/ census inputs
 IIRS/Carbon_Stocks/carbon_project/   Flask backend + Leaflet/Chart.js frontend
