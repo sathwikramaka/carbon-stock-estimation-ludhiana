@@ -702,7 +702,12 @@ writes every published number to `IIRS/Carbon_Stocks/results/`;
 (`district_summary`, `model_metrics`, `ndvi_monthly`, `cells`), verifies that
 the database totals match the files, and demonstrates spatial queries
 (bounding-box retrieval with `ST_MakeEnvelope`, spatial joins) and MongoDB
-aggregations.
+aggregations. On the author's machine (PostgreSQL 16 with PostGIS, MongoDB
+Community Server) both stores reproduce the published totals exactly — soil
+10.5371 MtC and NPP 0.3353 MtC/yr — and the local dashboard serves the map
+from PostGIS (`DB_MODE=local`; the map footer reads `data: local`). An
+`/api/health` endpoint reports the state of each database, and the dashboard
+falls back to the result files, saying so, if a database is unavailable.
 
 | Endpoint | Returns |
 |---|---|
