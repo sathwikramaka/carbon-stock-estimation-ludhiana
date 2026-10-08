@@ -92,7 +92,7 @@ def test_soil_density_is_a_stock_in_t_per_ha(summary):
 def test_census_cells_sum_to_headline(summary):
     """In v2 every published total is a plain sum of the per-cell table (what the databases load)."""
     if summary["mode"] != "v2-census":
-        pytest.skip("v1 totals come from survey estimators, not cell sums")
+        pytest.skip("sample-mode totals come from survey estimators, not cell sums")
     cells = read_cells(["soc_stock_tc", "npp_flux_tc_yr"])
     assert cells.soc_stock_tc.sum() / 1e6 == pytest.approx(summary["soil"]["stock_mtc"]["estimate"], abs=1e-3)
     assert cells.npp_flux_tc_yr.sum() / 1e6 == pytest.approx(summary["npp"]["flux_mtc_per_year"]["estimate"], abs=1e-3)
