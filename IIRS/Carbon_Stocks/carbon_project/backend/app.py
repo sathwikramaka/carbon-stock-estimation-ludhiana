@@ -219,7 +219,8 @@ def with_fallback(db_fn, file_fn):
         try:
             return db_fn(), DB_MODE
         except Exception as exc:  # noqa: BLE001 — any DB failure falls back to the files
-            app.logger.warning("database unavailable (%s); serving results files", exc.__class__.__name__)
+            app.logger.warning("database unavailable (%s: %s); serving results files",
+                               exc.__class__.__name__, str(exc).strip().splitlines()[0][:200] if str(exc).strip() else "")
             return file_fn(), "files-fallback"
     return file_fn(), "files"
 
@@ -235,17 +236,46 @@ def index():
     return render_template("index.html")
 
 
+def _check_postgres():
+    """Connect and confirm grid_cells has every column the API reads (an old table would not)."""
+    conn = pg()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'grid_cells'")
+        have = {r[0] for r in cur.fetchall()}
+        if not have:
+            return "connected, but table grid_cells is missing: run IIRS/Scrpit/03_publish_databases.ipynb"
+        need = {c.strip() for c in CELL_COLS.split(",")} | {"geom"}
+        missing = sorted(need - have)
+        if missing:
+            return f"grid_cells is an old table (missing {', '.join(missing)}): re-run 03_publish_databases.ipynb"
+        cur.execute("SELECT count(*) FROM grid_cells")
+        return f"ok ({cur.fetchone()[0]:,} cells)"
+    finally:
+        conn.close()
+
+
+def _check_mongo():
+    db = mdb()
+    db.command("ping")
+    n = db["cells"].estimated_document_count()
+    if not n or db["district_summary"].estimated_document_count() == 0:
+        return "connected, but collections cells/district_summary are empty: run 03_publish_databases.ipynb"
+    return f"ok ({n:,} cells)"
+
+
 @app.route("/api/health")
 def api_health():
+    """Open http://localhost:5000/api/health to see why a database is not used."""
     status = {"db_mode": DB_MODE, "results_dir": str(RESULTS),
               "results_files": sorted(p.name for p in RESULTS.glob("*")) if RESULTS.exists() else []}
     if DB_MODE in ("local", "cloud"):
-        for name, fn in [("postgres", lambda: pg().close()), ("mongodb", lambda: mdb().command("ping"))]:
+        for name, fn in [("postgres", _check_postgres), ("mongodb", _check_mongo)]:
             try:
-                fn()
-                status[name] = "ok"
+                status[name] = fn()
             except Exception as exc:  # noqa: BLE001
-                status[name] = f"down: {exc.__class__.__name__}"
+                msg = str(exc).strip().splitlines()[0][:200] if str(exc).strip() else ""
+                status[name] = f"down: {exc.__class__.__name__}: {msg}"
     return jsonify(status)
 
 
