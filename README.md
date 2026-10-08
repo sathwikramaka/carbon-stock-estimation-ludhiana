@@ -8,7 +8,7 @@ cross-check, and a dashboard that serves exactly what the analysis produced.
 > extraction (`notebooks/00_gee_extraction.ipynb`, project `my-projects-510917`,
 > run 2026-10-07) of all 71,197 lattice cells touching the district, weighted by
 > each cell's share inside the geoBoundaries ADM2 polygon. The v1 exports are
-> kept for the audit ([AUDIT.md](AUDIT.md)).
+> kept for the audit ([AUDIT](docs/AUDIT.md)).
 
 ## Results
 
@@ -23,7 +23,7 @@ cross-check, and a dashboard that serves exactly what the analysis produced.
 - **The soil stock is 2.3× the previously reported 4.4–4.5 MtC.** The v1 column
   `SOC_mean` was SoilGrids `ocs` — a 0–30 cm carbon *stock* in t/ha — but every
   earlier version read it as carbon *content* and multiplied it by bulk density
-  and depth again (AUDIT.md, F14).
+  and depth again (docs/AUDIT.md, F14).
 - Rebuilding the stock from SoilGrids SOC × BD × 30 cm × (1 − coarse fraction)
   gives 14.46 MtC. SoilGrids models `ocs` directly, and the two disagree by a
   median factor of 1.35 here; the headline uses `ocs`, the product's own stock
@@ -36,7 +36,7 @@ cross-check, and a dashboard that serves exactly what the analysis produced.
   ±0.05 MtC, which is false precision. Field samples are the only way to narrow it.
 - The stock and the flux have different dimensions and are never summed.
 - MOD17 captures about 10% of the carbon that demonstrably passes through the
-  district's crops. It is not fit for crop carbon flux here (AUDIT.md, F4).
+  district's crops. It is not fit for crop carbon flux here (docs/AUDIT.md, F4).
 - None of this is a carbon-credit quantity: no baseline, additionality,
   permanence or field verification. For cropland soil carbon credits the
   relevant Verra methodology is VM0042 (Improved Agricultural Land Management).
@@ -51,7 +51,7 @@ cross-check, and a dashboard that serves exactly what the analysis produced.
    thickness-weighted; MOD17A3HGF 2024 is scaled per its specification; ESA
    WorldCover, SRTM and monthly Sentinel-2 NDVI come with it. A validation cell
    refuses to write the table if any physical check fails. Inputs and settings
-   are recorded in `IIRS/Carbon_Stocks/v2/manifest.json`.
+   are recorded in `data/v2/manifest.json`.
 3. **Totals are a census, clipped to the district.** Stock = Σ `ocs` × valid
    fraction × area inside the boundary. Two boundaries are carried
    (geoBoundaries ADM2 headline, Census 2011 check), so the boundary choice is
@@ -76,7 +76,7 @@ copy .env.example .env                                   # then edit if using da
 
 | Step | Notebook | Needs | Writes |
 |---|---|---|---|
-| 0 | `notebooks/00_gee_extraction.ipynb` | Earth Engine project `my-projects-510917` | `IIRS/Carbon_Stocks/v2/ludhiana_cells_v2.csv.gz` (committed) |
+| 0 | `notebooks/00_gee_extraction.ipynb` | Earth Engine project `my-projects-510917` | `data/v2/ludhiana_cells_v2.csv.gz` (committed) |
 | 1 | `notebooks/01_data_audit.ipynb` | raw exports | `results/audit_findings.json`, figures |
 | 2 | `notebooks/02_carbon_pipeline.ipynb` | v2 table (falls back to v1 exports) | `results/` — every published number |
 | 3 (optional) | `notebooks/03_publish_databases.ipynb` | PostgreSQL/PostGIS, MongoDB | database copies of `results/` |
@@ -86,7 +86,7 @@ copy .env.example .env                                   # then edit if using da
 Dashboard (no database needed):
 
 ```bash
-cd IIRS/Carbon_Stocks/carbon_project/backend
+cd dashboard/backend
 python app.py                      # http://localhost:5000
 ```
 
@@ -101,16 +101,16 @@ until the pipeline has run).
 ## Layout
 
 ```
-config.py                  constants, cell key, soil QC, loaders
-estimators.py              survey estimators, interpolation, crop NPP, census totals
-notebooks/                 00 extraction · 01 audit · 02 pipeline · 03 publish · 04 map · 05 uncertainty
-results/                   pipeline outputs (the only source the dashboard reads)
-IIRS/Carbon_Stocks/        raw Earth Engine exports (v1), boundaries/, v2/ census inputs
-IIRS/Carbon_Stocks/carbon_project/   Flask backend + Leaflet/Chart.js frontend
+config.py, estimators.py   constants, cell key, soil QC, loaders; survey estimators, census totals
+notebooks/                 00 extraction · 01 audit · 02 pipeline · 03 databases · 04 map · 05 uncertainty
+data/raw/                  v1 Earth Engine exports, as received (read-only)
+data/boundaries/           district and state boundaries (geoBoundaries, Datameet)
+data/v2/                   v2 census table + manifest (per-layer CSVs and chunks are git-ignored)
+data/soilgrids_quantiles/  SoilGrids ocs quantile GeoTIFFs (native Homolosine)
+results/                   pipeline outputs: the only source the dashboard reads
+dashboard/                 Flask backend + Leaflet/Chart.js frontend
 tests/                     invariants for keys, units, QC, estimators, results, API
-docs/DATA_DICTIONARY.md    every column, its unit and provenance
-AUDIT.md                   every defect found, evidence, fix, status
-project_report.md          the written report
+docs/                      AUDIT.md (defects, evidence, fixes) · REPORT.md · DATA_DICTIONARY.md
 archive/                   superseded scripts, documents and outputs (history only)
 ```
 
