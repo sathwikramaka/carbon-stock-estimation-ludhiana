@@ -374,7 +374,7 @@ html,body{height:100%;background:var(--b0);color:var(--t1);font-family:var(--fb)
     <div class="panel"><div class="ph"><span class="pt">Soil stock — sensitivity</span><span class="ptag">MtC · 95% CI</span></div><div style="overflow-x:auto"><table class="dt"><thead><tr><th>Variant</th><th>Estimate</th><th>95% CI</th></tr></thead><tbody id="sens-soil"></tbody></table></div></div>
     <div class="panel"><div class="ph"><span class="pt" id="sens-npp-title">NPP flux — sensitivity to conversion</span><span class="ptag" id="sens-npp-tag">MtC/yr · 95% CI</span></div><div style="overflow-x:auto"><table class="dt"><thead><tr><th id="sens-npp-h1">Variant</th><th>Estimate</th><th id="sens-npp-h3">95% CI</th></tr></thead><tbody id="sens-npp"></tbody></table></div></div>
   </div>
-  <div class="panel" style="margin-top:16px"><div class="ph"><span class="pt">MOD17 vs crop-yield NPP</span><span class="ptag">independent check</span></div><p id="crop-text" style="color:var(--t2);font-size:.84rem;line-height:1.6">—</p></div>
+  <div class="panel" style="margin-top:16px"><div class="ph"><span class="pt">MOD17 vs crop-based NPP</span><span class="ptag">independent check</span></div><p id="crop-text" style="color:var(--t2);font-size:.84rem;line-height:1.6">—</p></div>
   <div class="panel" style="margin-top:16px">
     <div class="ph"><span class="pt">Monthly NDVI — June 2024 to May 2025</span><span class="ptag">median over cells with an attributable value</span></div>
     <div style="height:290px"><canvas id="chart-ndvi"></canvas></div>
@@ -392,7 +392,7 @@ html,body{height:100%;background:var(--b0);color:var(--t1);font-family:var(--fb)
 
 <!-- ══ MODEL ══ -->
 <section class="page" id="page-model"><div class="section">
-  <div class="ph2"><div class="pey">MACHINE LEARNING</div><h1>Random Forest Models</h1><p>Above-ground (NPP) and below-ground (SOC) random forests on a 20,000-cell sample: terrain, land cover and Sentinel-2 NDVI, each with 0.7–9 km neighbourhood means, plus coordinates. Validated by 5-fold cross-validation over 8 × 8 geographic blocks against gradient boosting, a coordinates-only model and the training mean.</p></div>
+  <div class="ph2"><div class="pey">MACHINE LEARNING</div><h1>Random Forest Models</h1><p>Above-ground (NPP) and below-ground (SOC) random forests on a 20,000-cell sample: terrain, land cover, Sentinel-2 NDVI, Sentinel-1 radar and Landsat LST, each with 0.7–9 km neighbourhood means, plus coordinates. Quantile forests also give 90% prediction intervals. Validated by 5-fold cross-validation over 8 × 8 geographic blocks against gradient boosting, a coordinates-only model and the training mean.</p></div>
   <div class="tab-row">
     <button class="tab active" onclick="showTab('tm',this)">Accuracy</button>
     <button class="tab" onclick="showTab('tf',this)">Feature importance</button>
@@ -414,7 +414,7 @@ html,body{height:100%;background:var(--b0);color:var(--t1);font-family:var(--fb)
     </div>
     <div class="mc">
       <div class="mc-top">
-        <div><div class="mc-ti" style="color:#00ff88">Above-ground (NPP) model</div><div class="mc-su">Target: MOD17 NPP (gC/m²/yr) · satellite covariates + neighbourhood means</div></div>
+        <div><div class="mc-ti" style="color:#00ff88">Above-ground (NPP) model</div><div class="mc-su">Target: MOD17 NPP 2020–24 mean (gC/m²/yr) · satellite covariates + neighbourhood means</div></div>
         <svg width="80" height="80" viewBox="0 0 100 100" style="margin-left:auto;flex-shrink:0">
           <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(0,255,136,.12)" stroke-width="7"/>
           <circle cx="50" cy="50" r="40" fill="none" stroke="#00ff88" stroke-width="7" stroke-dasharray="251.2" stroke-dashoffset="251.2" id="ring-npp" stroke-linecap="round" style="transform:rotate(-90deg);transform-origin:50px 50px;transition:stroke-dashoffset 1.8s cubic-bezier(.4,0,.2,1) .3s;filter:drop-shadow(0 0 6px #00ff88)"/>
@@ -453,6 +453,6 @@ html,body{height:100%;background:var(--b0);color:var(--t1);font-family:var(--fb)
 </div></section>
 
 <div id="ldr"><div class="ldr-ring"></div><div class="ldr-txt">INITIALISING</div></div>
-<script src="/static/main.js?v=13"></script>
+<script src="/static/main.js?v=14"></script>
 </body>
 </html>
