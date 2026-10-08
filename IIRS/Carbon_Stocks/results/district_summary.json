@@ -87,7 +87,19 @@
       "estimate": 0.954
     },
     "conversion": "npp_gc_m2_yr / 100 (scaled inside Earth Engine)",
-    "method": "Census of every cell, area inside boundary"
+    "method": "Census of every cell, area inside boundary",
+    "by_year_mtc": {
+      "2020": 0.2984,
+      "2021": 0.3557,
+      "2022": 0.4446,
+      "2023": 0.5755,
+      "2024": 0.3353
+    },
+    "multiyear_mean_mtc": 0.4019,
+    "multiyear_range_mtc": [
+      0.2984,
+      0.5755
+    ]
   },
   "crop_yield_crosscheck": {
     "total_mtc_median": 3.3360016595439093,
@@ -137,6 +149,30 @@
         "root_shoot_rel_sd": 0.35
       }
     }
+  },
+  "crop_lue": {
+    "method": "Monteith LUE: NPP = CUE x eps x sum_month(fAPAR(NDVI) x PAR), cropland share of each cell",
+    "fapar": "1.1638 x NDVI - 0.1426, clipped 0-0.95 (Myneni & Williams 1994)",
+    "par": "0.48 x ERA5-Land surface_solar_radiation_downwards, Jun 2024 - May 2025",
+    "eps_gc_mj": [
+      1.5,
+      2.8
+    ],
+    "cue": [
+      0.45,
+      0.55
+    ],
+    "draws": 20000,
+    "cropland_area_ha": 302639,
+    "mean_apar_mj_m2_yr": 1195.0,
+    "npp_mtc_median": 3.885,
+    "npp_mtc_p05_p95": [
+      2.789,
+      5.065
+    ],
+    "npp_tc_ha_yr_median": 12.84,
+    "over_crop_yield_lower_bound": 1.16,
+    "mod17_over_lue": 0.086
   },
   "formulas": {
     "soil": "SOC stock (tC) = SoilGrids ocs 0-30 cm (t/ha of valid soil) x valid-soil fraction x cell area (ha)",

@@ -77,3 +77,17 @@ Both simplified at 0.0001° (~10 m); area change < 0.001%. Census 2011 reports 3
 
 `district_summary.json`, `model_metrics.json`, `ndvi_monthly.json`,
 `data_quality.json` — see the notebook that writes each.
+
+## Extra covariates (`IIRS/Carbon_Stocks/v2/ludhiana_cells_extra.csv.gz`, notebook 07)
+
+| Column | Unit | Source |
+|---|---|---|
+| `npp_2020` … `npp_2024` | gC/m²/yr | MOD17A3HGF v6.1, each year |
+| `vv_kharif`, `vh_kharif`, `vhvv_kharif`, `vv_rabi`, `vh_rabi`, `vhvv_rabi` | dB | Sentinel-1 GRD IW seasonal medians (kharif Jun–Oct 2024, rabi Nov 2024–Apr 2025) |
+| `lst_kharif`, `lst_rabi`, `lst_annual` | °C | Landsat 8/9 C2 L2 surface temperature, cloud-masked medians |
+| `par_<MonYY>` | MJ/m²/month | 0.48 × ERA5-Land monthly downward shortwave |
+
+Per-cell model outputs added to `carbon_cells`: `npp_multiyear_gc_m2_yr` (2020–2024
+mean), `npp_lue_tc_ha_yr` (crop light-use-efficiency NPP per ha of cropland, central
+ε and CUE), `soc_model`/`npp_model` with `_q05`/`_q95` (quantile-forest mean and
+90% interval).
