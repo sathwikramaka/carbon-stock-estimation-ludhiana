@@ -11,7 +11,7 @@ from conftest import load_app, needs_cells, needs_results
 @pytest.fixture(scope="module")
 def client():
     if not (C.RESULTS / "carbon_cells.csv").exists():
-        pytest.skip("run notebooks/02_carbon_pipeline.ipynb first")
+        pytest.skip("run IIRS/Scrpit/02_carbon_pipeline.ipynb first")
     return load_app(C.RESULTS).app.test_client()
 
 
@@ -64,7 +64,7 @@ def test_missing_results_returns_503(tmp_path):
 
 def test_database_failure_falls_back_to_files(tmp_path):
     if not (C.RESULTS / "district_summary.json").exists():
-        pytest.skip("run notebooks/02_carbon_pipeline.ipynb first")
+        pytest.skip("run IIRS/Scrpit/02_carbon_pipeline.ipynb first")
     for f in ["district_summary.json", "model_metrics.json", "ndvi_monthly.json"]:
         shutil.copy(C.RESULTS / f, tmp_path / f)
     mod = load_app(tmp_path, mode="local")
@@ -79,7 +79,7 @@ def test_database_failure_falls_back_to_files(tmp_path):
 
 def test_empty_database_collection_is_labelled_fallback(tmp_path):
     if not (C.RESULTS / "district_summary.json").exists():
-        pytest.skip("run notebooks/02_carbon_pipeline.ipynb first")
+        pytest.skip("run IIRS/Scrpit/02_carbon_pipeline.ipynb first")
     shutil.copy(C.RESULTS / "district_summary.json", tmp_path / "district_summary.json")
     mod = load_app(tmp_path, mode="local")
 

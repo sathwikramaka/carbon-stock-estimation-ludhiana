@@ -1,6 +1,6 @@
 """Shared fixtures. Tests that need the raw exports or pipeline results skip
 cleanly when those files are absent (e.g. a fresh clone before running
-notebooks/02_carbon_pipeline.ipynb)."""
+IIRS/Scrpit/02_carbon_pipeline.ipynb)."""
 import importlib.util
 import json
 import os
@@ -21,9 +21,9 @@ RAW = ["BGD_for_all_grids(GEOM).csv", "AGD_for_all_grids_geom.csv",
 
 needs_raw = pytest.mark.skipif(not all((C.RAW / f).exists() for f in RAW), reason="raw exports not present")
 needs_results = pytest.mark.skipif(not (C.RESULTS / "district_summary.json").exists(),
-                                   reason="run notebooks/02_carbon_pipeline.ipynb first")
+                                   reason="run IIRS/Scrpit/02_carbon_pipeline.ipynb first")
 needs_cells = pytest.mark.skipif(not (C.RESULTS / "carbon_cells.csv").exists(),
-                                 reason="run notebooks/02_carbon_pipeline.ipynb first")
+                                 reason="run IIRS/Scrpit/02_carbon_pipeline.ipynb first")
 
 
 @pytest.fixture(scope="session")
