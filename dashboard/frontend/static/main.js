@@ -29,6 +29,12 @@ const AXIS = (title)=>({grid:{color:"rgba(0,160,220,.07)"},ticks:{color:"#5a8a9f
 function esc(v){ return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 function fmt(v,d=2){ return (v==null||!isFinite(+v))?"—":(+v).toFixed(d); }
 function ci(e,d=3){ return e&&e.ci95?`95% CI ${(+e.ci95[0]).toFixed(d)}–${(+e.ci95[1]).toFixed(d)}`:""; }
+// SoilGrids' own 90% interval for the stock (05_soilgrids_uncertainty), or the sampling CI in v1 mode
+function soilRange(soil){
+  const u=soil&&soil.soilgrids_uncertainty;
+  if(u&&u.correlated_90pct_mtc) return `SoilGrids 90%: ${(+u.correlated_90pct_mtc[0]).toFixed(1)}–${(+u.correlated_90pct_mtc[1]).toFixed(1)} MtC`;
+  return soil&&soil.stock_mtc&&soil.stock_mtc.ci95 ? ci(soil.stock_mtc,3)+" · sampling only" : "";
+}
 function setTxt(id,v){ const e=document.getElementById(id); if(e&&v!=null) e.textContent=v; }
 function setBar(id,p){ const e=document.getElementById(id); if(e) e.style.width=Math.min(+p,100)+"%"; }
 function countUp(id,target,dec=2,ms=1400){
@@ -87,7 +93,7 @@ async function loadHome(){
   }
   try{ m=await metrics(); }catch(e){ console.warn(e); }
   const soil=s.soil, npp=s.npp, crop=s.crop_yield_crosscheck, prev=s.previous_published||{};
-  countUp("kpi-soil",soil.stock_mtc.estimate,3); setTxt("kpi-soil-ci",ci(soil.stock_mtc,3)+(soil.stock_mtc.ci95?" · sampling only":""));
+  countUp("kpi-soil",soil.stock_mtc.estimate,3); setTxt("kpi-soil-ci",soilRange(soil));
   countUp("kpi-density",soil.mean_density_tc_ha.estimate,2); setTxt("kpi-density-ci",ci(soil.mean_density_tc_ha,2));
   countUp("kpi-npp",npp.flux_mtc_per_year.estimate,3); setTxt("kpi-npp-ci",ci(npp.flux_mtc_per_year,3));
   if(crop){ countUp("kpi-crop",crop.total_mtc_median,2);
@@ -487,7 +493,7 @@ async function loadAnalytics(){
   try{ s=await summary(); }catch(e){ setTxt("a-sub","Results unavailable: "+e.message); return; }
   const soil=s.soil, npp=s.npp, crop=s.crop_yield_crosscheck;
   setTxt("a-sub",`${s.mode} · ${s.status} · run ${s.run_date}`);
-  setTxt("a-soil",fmt(soil.stock_mtc.estimate,3)); setTxt("a-soil-ci",ci(soil.stock_mtc,3));
+  setTxt("a-soil",fmt(soil.stock_mtc.estimate,3)); setTxt("a-soil-ci",soilRange(soil));
   setTxt("a-npp",fmt(npp.flux_mtc_per_year.estimate,3)); setTxt("a-npp-ci",ci(npp.flux_mtc_per_year,3));
   if(crop){ setTxt("a-crop",fmt(crop.total_mtc_median,2));
     setTxt("a-crop-ci",`90% range ${crop.total_mtc_p05_p95[0].toFixed(2)}–${crop.total_mtc_p05_p95[1].toFixed(2)}`); }
@@ -500,8 +506,8 @@ async function loadAnalytics(){
       `Reported Ludhiana wheat and paddy yields, converted with IPCC (2019) factors, put at least `+
       `${crop.total_mtc_median.toFixed(2)} MtC/yr (90% range ${crop.total_mtc_p05_p95[0].toFixed(2)}–${crop.total_mtc_p05_p95[1].toFixed(2)}) `+
       `through the district's two main crops. Correctly scaled MOD17 reports ${npp.flux_mtc_per_year.estimate.toFixed(3)} MtC/yr — `+
-      `${(crop.mod17_over_crop_ratio*100).toFixed(1)}% of that lower bound — and negative annual NPP in `+
-      `${npp.negative_share_agricultural!=null?(npp.negative_share_agricultural*100).toFixed(0)+"%":"some"} of agricultural cells. `+
+      `${(crop.mod17_over_crop_ratio*100).toFixed(1)}% of that lower bound`+
+      (npp.negative_share_agricultural>0?` — and negative annual NPP in ${(npp.negative_share_agricultural*100).toFixed(0)}% of agricultural cells`:"")+`. `+
       `The old dashboard figure looked plausible only because the product's scale factor had been skipped, inflating it tenfold.`);
   }
 
