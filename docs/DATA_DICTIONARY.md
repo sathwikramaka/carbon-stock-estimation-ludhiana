@@ -14,7 +14,6 @@ asset and parameter.
 | `Below_Ground_Data_geom.csv` | 20,000 | WKT → `cell_id` | random sample of the grid, with SOC |
 | `Above_ground_data_geom.csv` | 20,000 | row-aligned with the BG sample | same sample, with NPP |
 | `ndvi_monthly_ludhiana_all_66790.csv` | 66,700 | `Grid_ID` only | no geometry; attributable for 62,431 cells |
-| `ndvi_monthly_ludhiana_jun24_may25.csv` | 20,000 | `Grid_ID` only | not used (the 66,700-row file covers every cell) |
 
 | Column | Unit as stored | Source (inferred) | Notes |
 |---|---|---|---|
