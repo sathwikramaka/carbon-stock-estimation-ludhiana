@@ -218,7 +218,10 @@ above.
 - **Soil Health Card:** `06_shc_validation.ipynb` compares SoilGrids with
   laboratory organic carbon at the same cells (Walkley–Black × 1.32) and builds
   a regression-kriging map from the tests; verified end to end on synthetic
-  soil tests, waiting for the real table.
+  soil tests. Not run on real data: the Punjab Soil Health Card table is a paid
+  download (Dataful). ISRIC WoSIS, the free alternative, holds one Ludhiana
+  profile (1979, location uncertain by over 10 km) and is part of SoilGrids'
+  own training data, so it cannot validate SoilGrids.
 
 ### Coordinate proxy analysis
 
@@ -346,7 +349,7 @@ Tests: `pytest tests/`.
 ## Further work
 
 - Run `06_shc_validation.ipynb` with the Punjab Soil Health Card table
-  (Dataful, sign-in required): it validates SoilGrids against lab tests and
+  (Dataful, paid download): it validates SoilGrids against lab tests and
   maps organic carbon from them by regression kriging — the single change that
   would turn the soil figure from a product estimate into a measured one
 - Calibrate the crop light-use-efficiency model against flux-tower or

@@ -38,8 +38,9 @@ neighbourhood means — reach R² = 0.550 for 2020–2024 mean net primary
 productivity and R² = 0.451 for soil organic carbon under spatial block
 cross-validation, against coordinates-only baselines of 0.392 and 0.224, with
 well-calibrated 90% prediction intervals (93% and 89% coverage). A Soil Health
-Card validation and regression-kriging workflow is implemented and verified,
-ready for the laboratory data. The estimation pipeline
+Card validation and regression-kriging workflow is implemented and verified on
+synthetic data; no free laboratory dataset suitable for running it was
+available. The estimation pipeline
 is implemented end to end with a PostGIS spatial database, a MongoDB document
 store, a Flask REST API and an interactive web dashboard, also published as a
 public web application.
@@ -640,9 +641,13 @@ excluded, and every model is compared with a coordinates-only baseline.
 | Model choice | none: totals do not depend on any model |
 
 The Soil Health Card validation and regression kriging (`06_shc_validation.ipynb`)
-are implemented and verified on synthetic data; they run once the Punjab Soil
-Health Card table is placed in `IIRS/Carbon_Stocks/`, reporting the SoilGrids
-to laboratory ratio, the cross-validated accuracy of SoilGrids, the forest and
+are implemented and verified on synthetic data. They were not run on real data:
+the Punjab Soil Health Card table is distributed as a paid download (Dataful),
+and the free ISRIC WoSIS profile database holds a single Ludhiana profile
+(sampled 1979, location uncertain by more than 10 km) and is itself part of
+SoilGrids' training data, so it cannot serve as an independent check. With the
+table placed in `IIRS/Carbon_Stocks/`, the notebook reports the SoilGrids to
+laboratory ratio, the cross-validated accuracy of SoilGrids, the forest and
 regression kriging against the tests, and a soil-test-anchored stock.
 
 ---
@@ -651,8 +656,9 @@ regression kriging against the tests, and a soil-test-anchored stock.
 
 **7.1 No field validation.** SOC values are SoilGrids predictions; their local
 accuracy in Ludhiana is unknown until compared with soil samples. The
-product's own 90% interval for the district stock is 2.2–27.7 MtC. This is the
-single most consequential limitation of the study.
+product's own 90% interval for the district stock is 2.2–27.7 MtC. No free,
+independent soil-test dataset was available (Section 6.5); this is the single
+most consequential limitation of the study.
 
 **7.2 Two routes to a stock.** SoilGrids' `ocs` layer and its SOC × bulk
 density layers differ by a median factor of 1.35 here; field data are needed
@@ -769,7 +775,7 @@ dashboard — is reproducible from the repository.
 ### 9.1 Recommendations for further work
 
 1. **Field calibration.** Run `06_shc_validation.ipynb` with the Punjab Soil
-   Health Card table: it validates SoilGrids against laboratory organic carbon
+   Health Card table (a paid download, or obtained through the institute): it validates SoilGrids against laboratory organic carbon
    and maps carbon from the tests by regression kriging, converting the
    below-ground estimate from a product estimate into a measured one. This is
    the highest-value extension of the work.
