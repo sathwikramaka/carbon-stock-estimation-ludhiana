@@ -16,7 +16,7 @@ jobs:
       - name: Install
         run: pip install -r requirements-dev.txt
 
-      # Tests that need results/carbon_cells.csv (git-ignored, 22 MB) skip
-      # cleanly; everything else, including the raw-export checks, runs.
+      # Every test runs: results tests fall back to the committed
+      # carbon_cells.parquet when the git-ignored CSV is absent.
       - name: Run pytest
         run: pytest tests/ -v
