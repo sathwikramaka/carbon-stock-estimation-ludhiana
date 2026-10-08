@@ -228,10 +228,21 @@ between the two extractions tracks the valid fraction *w* with r = 0.997.
 Every earlier analysis, including this project's first rebuild, read the
 column as SOC content and computed SOC × bulk density × 30 cm on top of a value
 that was already a 0–30 cm stock. The two errors partly cancelled: a stock of
-~31 t/ha read as 3.1 g/kg × 1.5 g/cm³ × 3 gives ~14 t/ha, which falls inside
-the range reported for Punjab's cultivated soils and therefore raised no
-alarm. Coarse fragments are inside SoilGrids' `ocs` prediction, so the second
-v1 depth question is resolved too.
+~31 t/ha read as 3.1 g/kg × 1.5 g/cm³ × 3 gives ~14 t/ha, which looked
+plausible for Punjab's cultivated soils and therefore raised no alarm.
+Coarse fragments are inside SoilGrids' `ocs` prediction, so the second v1
+depth question is resolved too.
+
+That plausibility deserves a second look in the other direction. Soil-test
+records put Punjab's state mean organic carbon at 2.9 g/kg in 1981/82 and
+4.0 g/kg in 2005/06 (Benbi & Brar, 2009). SoilGrids' 31 t/ha over 0–30 cm at
+1.5 g/cm³ implies about 6.9 g/kg, and its own SOC layer averages 10.3 g/kg
+here. Soil-test samples are usually taken from the surface 15 cm, where
+carbon is highest, so a 0–30 cm mean should be lower still, not higher. The
+comparison is coarse (state vs district, different years), but it points the
+same way as the wide quantiles: SoilGrids may overstate Ludhiana's soil carbon,
+possibly by a factor of 1.5–2. Testing that against Soil Health Card samples
+is the next step (Section 9).
 
 ---
 
@@ -322,6 +333,7 @@ Importance is permutation importance on held-out folds (Strobl et al., 2007).
 | Document store | MongoDB | summary, metrics, NDVI, per-cell table |
 | API | Flask | summary, metrics, NDVI, GeoJSON by sample or bounding box, paged cells |
 | Frontend | Leaflet, Chart.js | home, map, analytics, model, explorer |
+| Public app | Streamlit, pydeck, Plotly, Motion | `app/streamlit_app.py`, deployed on Streamlit Community Cloud |
 
 ### 5.7 Re-extraction (v2 census)
 
@@ -512,9 +524,13 @@ result — little skill beyond position — is informative in its own right.
 The re-extraction (Section 5.7) has been run and its census is the headline.
 In order of value:
 
-1. Validate SoilGrids locally against Soil Health Card or other soil-test
-   data. With a 90% interval of 2.2–27.7 MtC, this is the only step that can
-   make the stock useful for decisions.
+1. Validate SoilGrids locally against Soil Health Card data.
+   `06_shc_validation.ipynb` is ready: it places each geotagged sample on the
+   250 m lattice, applies the Walkley–Black correction (× 1.32), compares with
+   SoilGrids at the same cells and scales the census by the median ratio. It
+   awaits the Punjab Soil Health Card table (Dataful, sign-in required). With a
+   90% interval of 2.2–27.7 MtC, this is the step that can make the stock
+   useful for decisions.
 2. Use those samples to fit a local error model (or a regression-kriging
    correction of SoilGrids), which would also show which of the two stock
    routes is closer.
@@ -545,7 +561,11 @@ convincing but meaningless results, and a pipeline that checks for them.
 
 ## References
 
-Breiman, L. (2001). Random forests. *Machine Learning*, 45, 5–32.
+Benbi, D. K., & Brar, J. S. (2009). A 25-year record of carbon sequestration and
+soil properties in intensive agriculture. *Agronomy for Sustainable
+Development*, 29(2), 257–265. https://doi.org/10.1051/agro/2008070
+
+Breiman, L. (2001). Random forests. *Machine Learning*, 45(1), 5–32. https://doi.org/10.1023/A:1010933404324
 
 Cochran, W. G. (1977). *Sampling Techniques* (3rd ed.). Wiley.
 
@@ -561,21 +581,24 @@ https://developers.google.com/earth-engine/datasets/catalog/MODIS_061_MOD17A3HGF
 
 Ploton, P., et al. (2020). Spatial validation reveals poor predictive
 performance of large-scale ecological mapping models. *Nature Communications*,
-11, 4540.
+11, 4540. https://doi.org/10.1038/s41467-020-18321-y
 
 Poggio, L., de Sousa, L. M., Batjes, N. H., Heuvelink, G. B. M., Kempen, B.,
 Ribeiro, E., & Rossiter, D. (2021). SoilGrids 2.0: producing soil information
 for the globe with quantified spatial uncertainty. *SOIL*, 7, 217–240.
+https://doi.org/10.5194/soil-7-217-2021
 
 Roberts, D. R., et al. (2017). Cross-validation strategies for data with
-temporal, spatial, hierarchical, or phylogenetic structure. *Ecography*, 40,
-913–929.
+temporal, spatial, hierarchical, or phylogenetic structure. *Ecography*, 40(8),
+913–929. https://doi.org/10.1111/ecog.02881
 
 Running, S. W., & Zhao, M. (2021). *MODIS/Terra Net Primary Production
 Gap-Filled Yearly L4 Global 500 m SIN Grid V061*. NASA LP DAAC.
+https://doi.org/10.5067/MODIS/MOD17A3HGF.061
 
 Strobl, C., Boulesteix, A.-L., Zeileis, A., & Hothorn, T. (2007). Bias in random
-forest variable importance measures. *BMC Bioinformatics*, 8, 25.
+forest variable importance measures: illustrations, sources and a solution.
+*BMC Bioinformatics*, 8, 25. https://doi.org/10.1186/1471-2105-8-25
 
 The Tribune (2024, 23 April). Wheat harvesting in Ludhiana district (2023-24
 area and yield). https://epaper.tribuneindia.com/r/3858221
@@ -588,10 +611,7 @@ v2.0. https://verra.org/verra-releases-revised-methodology-for-improved-agricult
 
 Wadoux, A. M. J.-C., Heuvelink, G. B. M., de Bruin, S., & Brus, D. J. (2021).
 Spatial cross-validation is not the right way to evaluate map accuracy.
-*Ecological Modelling*, 457, 109692.
-
-`[FILL IN: verify page numbers and DOIs against the publications; add Punjab
-soil-carbon literature for the 0.2–0.6% range]`
+*Ecological Modelling*, 457, 109692. https://doi.org/10.1016/j.ecolmodel.2021.109692
 
 ---
 
@@ -603,4 +623,33 @@ write them are `02_carbon_pipeline.ipynb` and `01_data_audit.ipynb`.
 
 ## Appendix B — Dashboard
 
-`[FILL IN: screenshots of the home, map, analytics, model and explorer pages]`
+The dashboard (`dashboard/`, started with `python app.py` or
+`dashboard/run_dashboard.bat`) serves only what `02_carbon_pipeline.ipynb`
+wrote to `results/`, or the database copies loaded by
+`03_publish_databases.ipynb`; every response names its source. Screenshots
+taken 8 October 2026 from the v2 census run.
+
+![Home: headline figures with the SoilGrids 90% interval](screenshots/home.jpg)
+
+*Figure B1.* Home. Headline soil stock, mean density, MOD17 flux and the
+crop-yield cross-check, with SoilGrids' own 90% interval under the stock.
+
+![Map: SOC stock layer over Esri imagery](screenshots/map.jpg)
+
+*Figure B2.* Map. A random sample of cells coloured by SOC stock (tC/ha);
+clicking loads every 250 m cell around the point. Basemap © Esri.
+
+![Analytics: estimates and sensitivity](screenshots/analytics.jpg)
+
+*Figure B3.* Analytics. Boundary and method sensitivities, the MOD17 vs
+crop-yield comparison and monthly Sentinel-2 NDVI.
+
+![Model: machine-learning experiment](screenshots/model.jpg)
+
+*Figure B4.* Model. The random-forest experiment is reported only for the v1
+data; in census mode no model is needed, and the page says so.
+
+![Explorer: per-cell table](screenshots/explorer.jpg)
+
+*Figure B5.* Explorer. All 71,197 cells with each value's source, filterable
+and exportable page by page.

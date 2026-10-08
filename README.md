@@ -66,6 +66,20 @@ cross-check, and a dashboard that serves exactly what the analysis produced.
    data a random forest barely beats position alone (ocs R² 0.20 vs 0.17;
    NPP 0.34 vs 0.32) and produces no published number.
 
+## Public app
+
+A Streamlit version of the results (`app/streamlit_app.py`) is deployed on
+Streamlit Community Cloud. It reads only `results/` and the boundaries, so it
+always shows the last pipeline run. Run it locally with:
+
+```bash
+pip install -r app/requirements.txt
+streamlit run app/streamlit_app.py
+```
+
+The Flask dashboard in `dashboard/` remains the local version with the
+PostgreSQL/MongoDB modes used in notebook 03.
+
 ## Run it
 
 ```bash
@@ -82,6 +96,7 @@ copy .env.example .env                                   # then edit if using da
 | 3 (optional) | `notebooks/03_publish_databases.ipynb` | PostgreSQL 16 + PostGIS, MongoDB (either alone works) | loads `results/` into both, verifies totals, PostGIS spatial-join and MongoDB aggregation examples; enables `DB_MODE=local` |
 | 4 | `notebooks/04_location_map.ipynb` | internet (first run) | `boundaries/punjab_*`, `results/fig_location.png` |
 | 5 | `notebooks/05_soilgrids_uncertainty.ipynb` | `maps.isric.org` reachable, or the four GeoTIFFs it lists | `results/soilgrids_uncertainty.json` (re-run 02 after) |
+| 6 | `notebooks/06_shc_validation.ipynb` | Soil Health Card table from Dataful in `data/raw/` (sign-in; not committed) | `results/shc_validation.json`: SoilGrids vs lab organic carbon at the same cells |
 
 Dashboard (no database needed):
 
@@ -90,25 +105,28 @@ cd dashboard/backend
 python app.py                      # http://localhost:5000
 ```
 
+On Windows you can double-click `dashboard/run_dashboard.bat` instead.
+
 `DB_MODE` in `.env` selects `files` (default, reads `results/`), `local`
 (PostgreSQL + MongoDB) or `cloud` (Supabase + Atlas). Database modes fall back
 to the files if a database is unreachable, and every response says which
 source it used.
 
-Tests: `pytest tests/` (47 tests; those needing `results/carbon_cells.csv` skip
+Tests: `pytest tests/` (49 tests; those needing `results/carbon_cells.csv` skip
 until the pipeline has run).
 
 ## Layout
 
 ```
 config.py, estimators.py   constants, cell key, soil QC, loaders; survey estimators, census totals
-notebooks/                 00 extraction · 01 audit · 02 pipeline · 03 databases · 04 map · 05 uncertainty
+notebooks/                 00 extraction · 01 audit · 02 pipeline · 03 databases · 04 map · 05 uncertainty · 06 soil-test check
 data/raw/                  v1 Earth Engine exports, as received (read-only)
 data/boundaries/           district and state boundaries (geoBoundaries, Datameet)
 data/v2/                   v2 census table + manifest (per-layer CSVs and chunks are git-ignored)
 data/soilgrids_quantiles/  SoilGrids ocs quantile GeoTIFFs (native Homolosine)
 results/                   pipeline outputs: the only source the dashboard reads
-dashboard/                 Flask backend + Leaflet/Chart.js frontend
+app/                       public Streamlit app (Community Cloud)
+dashboard/                 Flask backend + Leaflet/Chart.js frontend (local, database modes)
 tests/                     invariants for keys, units, QC, estimators, results, API
 docs/                      AUDIT.md (defects, evidence, fixes) · REPORT.md · DATA_DICTIONARY.md
 archive/                   superseded scripts, documents and outputs (history only)

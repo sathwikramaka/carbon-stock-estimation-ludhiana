@@ -21,3 +21,7 @@ data/v2/chunks/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Soil Health Card download (Dataful licence; derived results only are committed)
+data/raw/*soil_health*
+data/raw/*Soil_Health*
