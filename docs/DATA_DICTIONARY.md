@@ -1,11 +1,11 @@
 # Data dictionary
 
-Provenance for v1 columns is inferred from the data (the extraction script was
-never committed — AUDIT.md F10). v2 columns are produced by
-`notebooks/00_gee_extraction.ipynb`, whose manifest records every asset and
-parameter.
+Provenance for the original sample exports is inferred from the data and
+checked in `IIRS/Scrpit/01_data_quality.ipynb` (Q1–Q10). Census columns are
+produced by `IIRS/Scrpit/00_gee_extraction.ipynb`, whose manifest records every
+asset and parameter.
 
-## v1 raw exports (`data/raw/`)
+## Earth Engine sample exports (`IIRS/Carbon_Stocks/`)
 
 | File | Rows | Key | Notes |
 |---|---|---|---|
@@ -14,25 +14,25 @@ parameter.
 | `Below_Ground_Data_geom.csv` | 20,000 | WKT → `cell_id` | random sample of the grid, with SOC |
 | `Above_ground_data_geom.csv` | 20,000 | row-aligned with the BG sample | same sample, with NPP |
 | `ndvi_monthly_ludhiana_all_66790.csv` | 66,700 | `Grid_ID` only | no geometry; attributable for 62,431 cells |
-| `ndvi_monthly_ludhiana_jun24_may25.csv` | 20,000 | `Grid_ID` only | not used (superseded by the 66,700-row file) |
+| `ndvi_monthly_ludhiana_jun24_may25.csv` | 20,000 | `Grid_ID` only | not used (the 66,700-row file covers every cell) |
 
 | Column | Unit as stored | Source (inferred) | Notes |
 |---|---|---|---|
-| `Grid_ID` | — | `ee.Image.random`-type column | **not an identifier** (F2) |
+| `Grid_ID` | — | `ee.Image.random`-type column | **not an identifier** (Q1) |
 | `agri_class` | 0/1 | unknown classification | |
 | `Ag/NonAg_m` | fraction | unknown | agricultural fraction of the cell |
 | `DEM_mean`, `Slope_mean` | m, degrees | SRTM-like | |
-| `sand_pct`, `clay_pct` | % | SoilGrids (÷10 applied in export) | diluted where `0 < bd < 1.40` (F1) |
+| `sand_pct`, `clay_pct` | % | SoilGrids (÷10 applied in export) | diluted where `0 < bd < 1.40` (Q4) |
 | `bd_gcm3` / `BD_g_cm3` | g/cm³ | SoilGrids `bdod` (÷100 applied) | diluted; used to estimate *w* |
-| `SOC_mean` | **t/ha** | SoilGrids `ocs` 0–30 cm organic carbon **stock** (F14) | not SOC content despite the name; diluted |
-| `Agricultur` | MOD17 DN | MOD17A3HGF `Npp` | ×0.0001 kgC/m² (F3); NaN outside product domain |
-| `Kharif_Pre`, `Rabi_Preci` | mm | interpolated rainfall | position proxies (F6) |
-| `LST_Sept20`, `Rabi_LST_2` | °C | land-surface temperature | position proxies (F6) |
+| `SOC_mean` | **t/ha** | SoilGrids `ocs` 0–30 cm organic carbon **stock** (Q10) | not SOC content despite the name; diluted |
+| `Agricultur` | MOD17 DN | MOD17A3HGF `Npp` | ×0.0001 kgC/m² (Q6); NaN outside product domain |
+| `Kharif_Pre`, `Rabi_Preci` | mm | interpolated rainfall | position proxies (Q9) |
+| `LST_Sept20`, `Rabi_LST_2` | °C | land-surface temperature | position proxies (Q9) |
 | `Kharif_pea`, `Rabi_Peak_` | NDVI | seasonal peak NDVI | |
 | `Kharif_Lud` (`NDWI_Khari` in AGD), `NDWI_Rabi_` | index | NDWI | |
 | `NDVI_Jun24` … `NDVI_May25` | NDVI | monthly composite, sensor unrecorded | Aug 2024: 48% of rows missing in the file; 52% of grid cells lack a usable value once unattributable IDs are excluded |
 
-## Boundaries (`data/boundaries/`)
+## Boundaries (`IIRS/Carbon_Stocks/boundaries/`)
 
 | File | Source | Licence | Area |
 |---|---|---|---|
@@ -43,7 +43,7 @@ parameter.
 
 Both simplified at 0.0001° (~10 m); area change < 0.001%. Census 2011 reports 376,700 ha.
 
-## v2 (`data/v2/ludhiana_cells_v2.csv.gz`)
+## Census table (`IIRS/Carbon_Stocks/v2/ludhiana_cells_v2.csv.gz`)
 
 | Column | Unit | Source |
 |---|---|---|
@@ -58,7 +58,7 @@ Both simplified at 0.0001° (~10 m); area change < 0.001%. Census 2011 reports 3
 | `dem_m`, `slope_deg` | m, degrees | SRTM 30 m |
 | `NDVI_<MonYY>`, `nobs_<MonYY>` | NDVI, count | Sentinel-2 SR monthly median; clear observations |
 
-## Results (`results/`)
+## Results (`IIRS/Carbon_Stocks/results/`)
 
 `carbon_cells.csv` — one row per cell:
 
@@ -66,14 +66,14 @@ Both simplified at 0.0001° (~10 m); area change < 0.001%. Census 2011 reports 3
 |---|---|---|
 | `cell_id` | — | key |
 | `lon`, `lat`, `WKT` | degrees | centroid and polygon |
-| `cell_area_ha` | ha | geodesic area (inside the boundary in v2) |
-| `soil_status`, `w_soil`, `w_reliable` | — , fraction, bool | full / partial / nodata; valid soil share; repaired per-cell values trusted (w ≥ 0.5) |
-| `bd_gcm3_rec`, `soc_gkg` | g/cm³, g/kg | bulk density and SOC content (v2: SoilGrids 0–30 cm; v1: BD repaired, SOC content unavailable → empty) |
+| `cell_area_ha` | ha | geodesic area (inside the boundary in census mode) |
+| `soil_status`, `w_soil`, `w_reliable` | — , fraction, bool | full / partial / nodata; valid soil share; per-cell values divided by w are trusted (w ≥ 0.5) |
+| `bd_gcm3_rec`, `soc_gkg` | g/cm³, g/kg | bulk density and SOC content (census: SoilGrids 0–30 cm; sample mode: BD / w, SOC content unavailable → empty) |
 | `soc_source` | — | observed / interpolated / no soil data |
 | `soc_stock_tc_ha` | tC/ha | SoilGrids `ocs` 0–30 cm per hectare of valid soil |
 | `soc_stock_tc` | tC | `soc_stock_tc_ha × w_soil × cell_area_ha` |
-| `npp_flux_tc_ha_yr`, `npp_flux_tc_yr` | tC/ha/yr, tC/yr | MOD17, correctly scaled |
+| `npp_flux_tc_ha_yr`, `npp_flux_tc_yr` | tC/ha/yr, tC/yr | MOD17, DN × 0.0001 kgC/m² |
 | `npp_source` | — | observed / interpolated / outside MOD17 domain |
 
 `district_summary.json`, `model_metrics.json`, `ndvi_monthly.json`,
-`audit_findings.json` — see the notebook that writes each.
+`data_quality.json` — see the notebook that writes each.
