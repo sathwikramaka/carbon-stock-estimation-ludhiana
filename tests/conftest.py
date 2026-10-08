@@ -22,8 +22,16 @@ RAW = ["BGD_for_all_grids(GEOM).csv", "AGD_for_all_grids_geom.csv",
 needs_raw = pytest.mark.skipif(not all((C.RAW / f).exists() for f in RAW), reason="raw exports not present")
 needs_results = pytest.mark.skipif(not (C.RESULTS / "district_summary.json").exists(),
                                    reason="run IIRS/Scrpit/02_carbon_pipeline.ipynb first")
-needs_cells = pytest.mark.skipif(not (C.RESULTS / "carbon_cells.csv").exists(),
+CELL_FILES = [C.RESULTS / "carbon_cells.csv", C.RESULTS / "carbon_cells.parquet"]   # CSV is git-ignored
+needs_cells = pytest.mark.skipif(not any(p.exists() for p in CELL_FILES),
                                  reason="run IIRS/Scrpit/02_carbon_pipeline.ipynb first")
+
+
+def read_cells(columns=None):
+    """Per-cell results: the local CSV if present, else the committed parquet."""
+    import pandas as pd
+    csv, parquet = CELL_FILES
+    return pd.read_csv(csv, usecols=columns) if csv.exists() else pd.read_parquet(parquet, columns=columns)
 
 
 @pytest.fixture(scope="session")
