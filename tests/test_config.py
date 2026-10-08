@@ -108,3 +108,13 @@ def test_v2_grid_matches_boundary_areas():
     for b, area in [(C.BOUNDARY_DEFAULT, 369_961), (C.BOUNDARY_CHECK, 358_482)]:
         assert (g.cell_area_ha * g[f"in_{b}"]).sum() == pytest.approx(area, rel=1e-3)
     assert g.in_district_frac.between(0, 1).all()
+
+
+def test_neighbourhood_means_ignore_missing_and_edges():
+    df = pd.DataFrame({"grid_row": [0, 0, 0, 1, 1, 1], "grid_col": [0, 1, 2, 0, 1, 2],
+                       "x": [1.0, 2.0, 3.0, 4.0, np.nan, 6.0]})
+    out = C.neighbourhood_means(df, ["x"], windows=(3,))
+    # centre-top cell sees all five valid neighbours; NaN is skipped, not treated as zero
+    assert out.loc[1, "x_f3"] == pytest.approx((1 + 2 + 3 + 4 + 6) / 5)
+    assert out.loc[0, "x_f3"] == pytest.approx((1 + 2 + 4) / 3)
+    assert C.feature_family("dem_m_f21") == "dem_m" and C.feature_family("lat") == "coordinates"

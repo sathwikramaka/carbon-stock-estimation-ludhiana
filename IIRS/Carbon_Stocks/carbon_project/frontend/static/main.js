@@ -511,7 +511,10 @@ async function loadAnalytics(){
       `through the district's two main crops. MOD17 reports ${npp.flux_mtc_per_year.estimate.toFixed(3)} MtC/yr — `+
       `${(crop.mod17_over_crop_ratio*100).toFixed(1)}% of that lower bound`+
       (npp.negative_share_agricultural>0?` — and negative annual NPP in ${(npp.negative_share_agricultural*100).toFixed(0)}% of agricultural cells`:"")+`. `+
-      `MOD17 under-represents irrigated double-cropping here, so the yield-based figure is the better guide to crop carbon flux.`);
+      `MOD17 under-represents irrigated double-cropping here, so the yield-based figure is the better guide to crop carbon flux.`+
+      (s.crop_lue?` A crop light-use-efficiency model (Sentinel-2 fAPAR × ERA5 PAR) gives ${(Math.round(s.crop_lue.npp_mtc_median*100)/100).toFixed(2)} MtC/yr `+
+        `(90% range ${s.crop_lue.npp_mtc_p05_p95[0].toFixed(2)}–${s.crop_lue.npp_mtc_p05_p95[1].toFixed(2)}) on cropland.`:"")+
+      (npp.multiyear_mean_mtc?` MOD17 2020–2024 averaged ${npp.multiyear_mean_mtc.toFixed(3)} MtC/yr (range ${npp.multiyear_range_mtc[0].toFixed(3)}–${npp.multiyear_range_mtc[1].toFixed(3)}).`:""));
   }
 
   let nd=[];
@@ -563,7 +566,11 @@ async function loadModel(){
     setTxt(key+"-n",exp.n.toLocaleString());
     setTxt(key+"-sd",`${exp.target_sd} ${unit}`);
     const top=(exp.permutation_importance||[]).slice(0,2).map(d=>d.feature).join(", ");
-    setTxt(key+"-note",`${exp.validation}. Coordinates-only R² ${co.r2.toFixed(3)}; training-mean R² ≈ 0. Top features: ${top}.`+(exp.with_soilgrids_properties?` Adding SoilGrids texture/BD layers: R² ${exp.with_soilgrids_properties.models.find(x=>x.model==="Random forest").r2.toFixed(3)}.`:""));
+    const sgm=exp.with_soilgrids_properties?.models?.[0], pi=exp.interval_90;
+    setTxt(key+"-note",`${exp.validation}. Coordinates-only R² ${co.r2.toFixed(3)}; training-mean R² ≈ 0.`+
+      (pi?` 90% prediction intervals cover ${(pi.coverage*100).toFixed(0)}% of held-out cells.`:"")+
+      ` Top features: ${top}.`+(sgm?` Adding SoilGrids texture/BD layers: R² ${sgm.r2.toFixed(3)}.`:"")+
+      (exp.target?` Target: ${exp.target}.`:""));
   };
   card("soc",m.soc_experiment,"t/ha");
   card("npp",m.npp_experiment,"gC/m²/yr");
@@ -574,9 +581,12 @@ async function loadModel(){
   let html="";
   for(const [t,exp] of [["SOC",m.soc_experiment],["NPP",m.npp_experiment]]) if(exp){
     exp.models.forEach(r=>html+=tr(t,r.model,r,exp.n));
-    (exp.ablation||[]).forEach(a=>{ if(!a.features.endsWith("(full model)")) html+=tr(t,`Random forest, ${a.features}`,{r2:a.r2},exp.n); });
-    const sg=exp.with_soilgrids_properties?.models?.find(x=>x.model==="Random forest");
-    if(sg) html+=tr(t,"Random forest + SoilGrids texture/BD layers",sg,exp.n);
+    (exp.ablation||[]).forEach(a=>html+=tr(t,`${exp.ablation_model||"Random forest"}, ${a.features}`,{r2:a.r2},exp.n));
+    const sg=exp.with_soilgrids_properties?.models?.[0];
+    if(sg) html+=tr(t,`${sg.model} + SoilGrids texture/BD layers`,sg,exp.n);
+    const y1=exp.single_year_2024_target?.models?.[0];
+    if(y1) html+=tr(t,`${y1.model}, 2024-only target`,y1,exp.n);
+    (exp.block_size_sensitivity||[]).forEach(b=>html+=tr(t,`${exp.ablation_model||"Model"}, ${b.blocks} spatial blocks`,{r2:b.r2},exp.n));
   }
   for(const [k,v] of Object.entries(m.interpolation||{}))
     html+=tr(k.startsWith("soc")?"SOC":"NPP",`Inverse-distance gap filling (random ${v.folds}-fold, k=${v.k})`,v,v.n);
