@@ -330,10 +330,12 @@ const TILES = {
   hyb:  [{url:"https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", attr:ESRI_ATTR, maxZ:19},
          {url:"https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}", attr:ESRI_ATTR, maxZ:19}],
   str:  [{url:"https://tile.openstreetmap.org/{z}/{x}/{y}.png", attr:OSM_ATTR, maxZ:19}],
-  dark: [{url:"https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", attr:OSM_ATTR+" © CARTO", maxZ:20, subs:"abcd"}],
+  // Esri dark canvas: keyless, same provider as the imagery (CARTO tiles now need an API key)
+  dark: [{url:"https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}", attr:ESRI_ATTR, maxZ:16},
+         {url:"https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}", attr:ESRI_ATTR, maxZ:16}],
 };
 function tileGroup(k){
-  return L.layerGroup(TILES[k].map(t=>L.tileLayer(t.url,{attribution:t.attr,maxZoom:t.maxZ,subdomains:t.subs||"abc"})));
+  return L.layerGroup(TILES[k].map(t=>L.tileLayer(t.url,{attribution:t.attr,maxNativeZoom:t.maxZ,maxZoom:20,subdomains:t.subs||"abc"})));
 }
 let TILE_L=null, ACTIVE_TILE="sat";
 
@@ -570,7 +572,12 @@ async function loadModel(){
   const tr=(t,name,r,n)=>`<tr><td style="color:${t==="SOC"?C.blue:C.green}">${esc(t)}</td><td>${esc(name)}</td>
     <td style="color:#e8f4f8;font-weight:700">${fmt(r.r2,3)}</td><td>${fmt(r.rmse,3)}</td><td>${fmt(r.mae,3)}</td><td>${n!=null?n.toLocaleString():"—"}</td></tr>`;
   let html="";
-  for(const [t,exp] of [["SOC",m.soc_experiment],["NPP",m.npp_experiment]]) if(exp) exp.models.forEach(r=>html+=tr(t,r.model,r,exp.n));
+  for(const [t,exp] of [["SOC",m.soc_experiment],["NPP",m.npp_experiment]]) if(exp){
+    exp.models.forEach(r=>html+=tr(t,r.model,r,exp.n));
+    (exp.ablation||[]).forEach(a=>{ if(!a.features.endsWith("(full model)")) html+=tr(t,`Random forest, ${a.features}`,{r2:a.r2},exp.n); });
+    const sg=exp.with_soilgrids_properties?.models?.find(x=>x.model==="Random forest");
+    if(sg) html+=tr(t,"Random forest + SoilGrids texture/BD layers",sg,exp.n);
+  }
   for(const [k,v] of Object.entries(m.interpolation||{}))
     html+=tr(k.startsWith("soc")?"SOC":"NPP",`Inverse-distance gap filling (random ${v.folds}-fold, k=${v.k})`,v,v.n);
   rows("cmp-tbody",html);
