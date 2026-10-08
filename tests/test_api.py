@@ -89,3 +89,18 @@ def test_empty_database_collection_is_labelled_fallback(tmp_path):
 
     mod.mdb = lambda: {"district_summary": EmptyCollection()}
     assert mod.app.test_client().get("/api/summary").get_json()["source"] == "files-fallback"
+
+
+@needs_cells
+def test_empty_cells_collection_falls_back_to_files(tmp_path):
+    """MongoDB running but notebook 03 never run: the explorer must show the files, not 0 cells."""
+    shutil.copy(C.RESULTS / "carbon_cells.csv", tmp_path / "carbon_cells.csv")
+    mod = load_app(tmp_path, mode="local")
+
+    class EmptyCells:
+        def count_documents(self, *a, **k):
+            return 0
+
+    mod.mdb = lambda: {"cells": EmptyCells()}
+    r = mod.app.test_client().get("/api/carbon?page=1&per_page=5").get_json()
+    assert r["source"] == "files-fallback" and r["total"] > 0 and len(r["records"]) == 5

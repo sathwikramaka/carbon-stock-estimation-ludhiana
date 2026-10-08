@@ -195,6 +195,8 @@ def db_geojson(limit=None, bbox=None) -> list:
         else:
             cur.execute(f"SELECT ST_AsGeoJSON(geom), {CELL_COLS} FROM grid_cells ORDER BY random() LIMIT %s", (limit,))
         rows = cur.fetchall()
+        if not bbox:
+            _need(rows, "grid_cells")                        # empty table -> serve the files instead
     finally:
         conn.close()
     return [{"type": "Feature", "geometry": json.loads(r[0]), "properties": _props(dict(zip(CELL_KEYS, r[1:])))}
@@ -305,8 +307,9 @@ def api_carbon():
         col = mdb()["cells"]
         proj = {"_id": 0, "cell_id": 1, "agri_class": 1, "soil_status": 1, "soc_gkg": 1, "soc_stock_tc_ha": 1,
                 "soc_source": 1, "npp_flux_tc_ha_yr": 1, "npp_source": 1}
+        total = _need(col.count_documents({}), "cells")      # empty collection -> serve the files instead
         recs = list(col.find({}, proj).sort("cell_id", 1).skip((page - 1) * per_page).limit(per_page))
-        return {"records": recs, "total": col.count_documents({}), "page": page, "per_page": per_page}
+        return {"records": recs, "total": total, "page": page, "per_page": per_page}
 
     out, src = with_fallback(db_page, lambda: files_page(page, per_page))
     return jsonify({**out, "source": src})
