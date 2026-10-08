@@ -17,6 +17,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import pydeck as pdk
 import streamlit as st
+import streamlit.components.v1 as components
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -102,20 +103,27 @@ st.html(f"""
   h1, h2, h3, h1 *, h2 *, h3 *, [data-testid="stHeading"] *, .serif {{ font-family: "Source Serif 4", Georgia, serif !important; color: {INK}; letter-spacing: -0.01em; }}
   h1 {{ font-weight: 600; font-size: clamp(2rem, 4.2vw, 3.1rem); line-height: 1.08; margin-bottom: .3rem; }}
   h2 {{ font-weight: 600; font-size: 1.55rem; margin-top: 1.4rem; }}
-  p, li {{ color: {INK}; line-height: 1.6; max-width: 72ch; }}
+  p, li {{ color: {INK}; line-height: 1.6; max-width: 65ch; text-wrap: pretty; }}
+  h1, h2, h3 {{ text-wrap: balance; }}
+  body, .stApp {{ font-variant-numeric: tabular-nums; }}
   .lede {{ font-family: "Source Serif 4", Georgia, serif; font-size: 1.32rem; line-height: 1.5; max-width: 60ch; color: {INK}; }}
   .quiet {{ color: {MUTED}; font-size: .92rem; }}
   .stTabs [data-baseweb="tab-list"] {{ gap: 1.6rem; border-bottom: 1px solid #CFCBBE; }}
   .stTabs [data-baseweb="tab"] {{ padding: .4rem 0; background: transparent; }}
   .stTabs [aria-selected="true"] p {{ color: {INK}; font-weight: 600; }}
   .stTabs [data-baseweb="tab-highlight"] {{ background: {SOIL} !important; }}
-  .facts {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 1.4rem 2.2rem; margin: 1.6rem 0 .6rem; }}
+  .facts {{ display: grid; grid-template-columns: 1.6fr 1.2fr 1fr; gap: 1.4rem 2.6rem; margin: 1.8rem 0 .8rem; }}
+  .fact {{ border-top: 2px solid #CFC9BA; padding-top: .7rem; }}
+  .fact:first-child {{ border-top-color: {SOIL}; }}
+  @media (max-width: 768px) {{ .facts {{ grid-template-columns: 1fr; }} }}
   .fact b {{ display: block; font-family: "Source Serif 4", Georgia, serif; font-size: 1.9rem; font-weight: 600; color: {INK}; }}
   .fact span {{ color: {MUTED}; font-size: .93rem; }}
-  .legend {{ display: flex; align-items: center; gap: .6rem; color: {MUTED}; font-size: .88rem; }}
-  .legend i {{ display: inline-block; width: 180px; height: 10px; border-radius: 5px; }}
-  a, a:visited {{ color: {CANAL}; }}
-  :focus-visible {{ outline: 2px solid {CANAL}; outline-offset: 2px; }}
+  .legend {{ display: flex; align-items: flex-start; gap: 1rem; color: {MUTED}; font-size: .88rem; flex-wrap: wrap; }}
+  .legend i {{ display: inline-block; width: 220px; height: 10px; border-radius: 4px; }}
+  .legend small {{ display: flex; justify-content: space-between; width: 220px; }}
+  a, a:visited {{ color: {SOIL}; text-underline-offset: 3px; }}
+  :focus-visible {{ outline: 2px solid {SOIL}; outline-offset: 2px; }}
+  .stTabs button {{ min-height: 44px; }}
 </style>
 """)
 
@@ -129,56 +137,76 @@ CENSUS = next((v["estimate"] for v in soil.get("sensitivity", []) if "census2011
 OLD = summary["previous_published"]["soil_stock_mtc"]
 
 
+MOTION_ESM = "https://cdn.jsdelivr.net/npm/motion@13.3.0/+esm"     # pinned; >= 2 weeks old at build time
+
+
 def uncertainty_strip() -> str:
-    """The one bold element: where 10.5 MtC sits inside what the model allows."""
+    """The one bold element: where the census total sits inside what SoilGrids allows.
+
+    Rendered in a components iframe so Motion can run. The band unfolds outward from the
+    central estimate once, when scrolled into view; it is static under reduced motion and
+    stays fully visible if the script cannot load.
+    """
     axis_max = 30.0
     pct = lambda v: 100 * v / axis_max
-    marks = [(OLD, "previously published"), (REBUILT, "rebuilt from SOC × density")]
+    marks = [(OLD, "previously published"), (REBUILT, "rebuilt from SOC x density")]
     ticks = "".join(
-        f'<div class="tick" style="left:{pct(v):.2f}%"><span>{v:.1f}<em> {label}</em></span></div>'
+        f'<div class="tick reveal" style="left:{pct(v):.2f}%"><span>{v:.1f}<em> {label}</em></span></div>'
         for v, label in marks if v)
     band = (f'<div class="band" style="left:{pct(LO):.2f}%;width:{pct(HI) - pct(LO):.2f}%"></div>'
-            f'<div class="bandlabel" style="left:{pct(LO):.2f}%">{LO:.1f}</div>'
-            f'<div class="bandlabel right" style="left:{pct(HI):.2f}%">{HI:.1f}</div>') if LO else ""
+            f'<div class="bandlabel reveal" style="left:{pct(LO):.2f}%">{LO:.1f}</div>'
+            f'<div class="bandlabel reveal" style="left:{pct(HI):.2f}%">{HI:.1f}</div>') if LO else ""
     scale = "".join(f'<div class="scale" style="left:{pct(v):.2f}%">{v:g}</div>' for v in range(0, 31, 5))
-    return f"""
+    origin = (pct(STOCK) - pct(LO)) / (pct(HI) - pct(LO)) * 100 if LO else 50
+    return f"""<!doctype html><html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,600&family=Public+Sans:wght@400;600&display=swap" rel="stylesheet">
+<script>document.documentElement.classList.add("js");
+  setTimeout(() => document.documentElement.classList.remove("js"), 2500);   // never leave the data hidden</script>
 <style>
-  .strip {{ position: relative; height: 150px; margin: 2.2rem 0 1rem; }}
+  html, body {{ margin: 0; background: {SILT}; font-family: "Public Sans", system-ui, sans-serif; font-variant-numeric: tabular-nums; }}
+  .strip {{ position: relative; height: 150px; margin: 0 18px 0 8px; }}
   .rail {{ position: absolute; top: 58px; left: 0; right: 0; height: 2px; background: #BDB7A8; }}
-  .band {{ position: absolute; top: 46px; height: 26px; background: {OCHRE}24; border: 1px solid {OCHRE};
-           border-radius: 13px; transform-origin: {pct(STOCK) - pct(LO or 0):.2f}% 50%;
-           animation: unfold 1.4s cubic-bezier(.2,.7,.2,1) .25s both; }}
-  @keyframes unfold {{ from {{ transform: scaleX(0.02); opacity: 0; }} to {{ transform: scaleX(1); opacity: 1; }} }}
-  @media (prefers-reduced-motion: reduce) {{ .band {{ animation: none; }} }}
+  .band {{ position: absolute; top: 46px; height: 26px; background: {OCHRE}26; border: 1px solid {OCHRE};
+           border-radius: 4px; transform-origin: {origin:.2f}% 50%; }}
   .point {{ position: absolute; top: 40px; width: 4px; height: 38px; background: {SOIL}; border-radius: 2px;
             left: calc({pct(STOCK):.2f}% - 2px); }}
-  .pointlabel {{ position: absolute; top: 0; left: {pct(STOCK):.2f}%; transform: translateX(-50%); white-space: nowrap;
-                 font-family: "Source Serif 4", Georgia, serif; font-size: 1.15rem; font-weight: 600; color: {SOIL}; }}
-  .bandlabel {{ position: absolute; top: 80px; transform: translateX(-50%); font-size: .85rem; color: {OCHRE}; font-weight: 600; }}
+  .pointlabel {{ position: absolute; top: 2px; left: {pct(STOCK):.2f}%; transform: translateX(-50%); white-space: nowrap;
+                 font-family: "Source Serif 4", Georgia, serif; font-size: 1.2rem; font-weight: 600; color: {SOIL}; }}
+  .bandlabel {{ position: absolute; top: 80px; transform: translateX(-50%); font-size: .85rem; color: #6E5108; font-weight: 600; }}
   .tick {{ position: absolute; top: 52px; width: 1px; height: 14px; background: {MUTED}; }}
-  .tick span {{ position: absolute; top: 46px; left: 0; transform: translateX(-50%); white-space: nowrap;
-                font-size: .82rem; color: {MUTED}; }}
+  .tick span {{ position: absolute; top: 46px; left: 0; transform: translateX(-50%); white-space: nowrap; font-size: .82rem; color: {MUTED}; }}
   .tick em {{ font-style: normal; }}
-  @media (max-width: 640px) {{ .tick em {{ display: none; }} .pointlabel {{ font-size: 1rem; }} }}
-  .scale {{ position: absolute; top: 122px; transform: translateX(-50%); font-size: .78rem; color: #8C8476; }}
-</style>
-<div class="strip" role="img" aria-label="Soil carbon stock {STOCK:.1f} million tonnes; SoilGrids 90 percent range {LO} to {HI}">
+  .scale {{ position: absolute; top: 124px; transform: translateX(-50%); font-size: .78rem; color: #7A7266; }}
+  .js .band, .js .reveal {{ opacity: 0; }}
+  @media (max-width: 640px) {{ .tick em {{ display: none; }} .pointlabel {{ font-size: 1.05rem; }} }}
+  @media (prefers-reduced-motion: reduce) {{ .js .band, .js .reveal {{ opacity: 1; }} }}
+</style></head><body>
+<div class="strip" role="img" aria-label="Census estimate {STOCK:.1f} million tonnes of carbon; SoilGrids 90 percent range {LO} to {HI} million tonnes; previously published {OLD}; rebuilt from SOC and bulk density {REBUILT}">
   <div class="rail"></div>{band}
   <div class="point"></div><div class="pointlabel">{STOCK:.1f} Mt</div>
   {ticks}{scale}
 </div>
-<p class="quiet">Million tonnes of carbon in the top 30 cm. The shaded band is SoilGrids' own 90% prediction
-interval, summed with fully correlated errors across the district.</p>"""
+<script type="module">
+  import {{ animate, inView, stagger, MotionGlobalConfig }} from "{MOTION_ESM}";
+  const root = document.documentElement;
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) {{ MotionGlobalConfig.skipAnimations = true; root.classList.remove("js"); }}
+  inView(".strip", () => {{
+    animate(".band", {{ opacity: [0, 1], scaleX: [0.03, 1] }}, {{ type: "spring", stiffness: 70, damping: 18 }})
+      .then(() => root.classList.remove("js"));
+    animate(".reveal", {{ opacity: [0, 1], y: [6, 0] }}, {{ duration: 0.5, ease: [0.16, 1, 0.3, 1], delay: stagger(0.08, {{ startDelay: 0.55 }}) }});
+  }}, {{ amount: 0.6 }});
+</script></body></html>"""
 
 
 # ── Page ─────────────────────────────────────────────────────────
 hero_text, hero_map = st.columns([3, 2], gap="large", vertical_alignment="center")
 with hero_text:
     st.title("How much carbon is in Ludhiana's topsoil?")
-    st.html(f'<p class="lede">About <b>{STOCK:.1f} million tonnes</b> in the top 30 cm, by a cell-by-cell census of '
-            f'SoilGrids. The model behind that number allows anything from {LO:.0f} to {HI:.0f}, and early evidence '
-            f'suggests it runs high. Treat it as a map product, not a measurement.</p>' if LO else
+    st.html(f'<p class="lede">About <b>{STOCK:.1f} million tonnes</b> in the top 30 cm. SoilGrids allows '
+            f'{LO:.0f} to {HI:.0f}, and it probably runs high.</p>' if LO else
             f'<p class="lede">About <b>{STOCK:.1f} million tonnes</b> in the top 30 cm.</p>')
+    st.html('<p class="quiet">A cell-by-cell census of a global soil model. Read it as a map product, '
+            'not a measurement.</p>')
 with hero_map:
     hero_url, _ = raster("soc_stock_tc_ha", "soil", 26, 36)
     st.html(f'<figure style="margin:0"><img src="{hero_url}" alt="Map of soil carbon stock across Ludhiana district; '
@@ -190,7 +218,9 @@ tab_stock, tab_map, tab_crop, tab_method, tab_data = st.tabs(
     ["Stock", "Map", "Crop productivity", "How it was made", "Download"])
 
 with tab_stock:
-    st.html(uncertainty_strip())
+    components.html(uncertainty_strip(), height=160)
+    st.html(f'<p class="quiet">Million tonnes of carbon in the top 30 cm. The census total is {STOCK:.1f} Mt; '
+            f'SoilGrids\' own 90% prediction interval, summed with fully correlated errors, runs from {LO:.1f} to {HI:.1f} Mt.</p>')
     st.html(f"""<div class="facts">
       <div class="fact"><b>{soil['mean_density_tc_ha']['estimate']:.1f} t/ha</b><span>average over {soil['soil_area_ha']['estimate']:,} ha of soil
         (built-up land and water excluded)</span></div>
@@ -205,7 +235,7 @@ with tab_stock:
         "layer exactly (r = 0.96, ratio 1.00).")
     st.subheader("Why it may still be too high")
     st.markdown(
-        "Soil-test records put Punjab's average topsoil organic carbon at 4.0 g/kg in 2005–06 (Benbi & Brar, 2009). "
+        "Soil-test records put Punjab's average topsoil organic carbon at 4.0 g/kg in 2005-06 (Benbi & Brar, 2009). "
         "SoilGrids implies about 6.9 g/kg here over a deeper layer, where carbon is normally lower. The comparison "
         "is coarse, but it points the same way as the wide interval: field samples are needed before this number "
         "supports any decision, and it is not a carbon-credit quantity.")
@@ -213,7 +243,7 @@ with tab_stock:
 with tab_map:
     layer = st.radio("Show", ["Soil carbon stock", "Crop productivity (MOD17)", "Cropland share"],
                      horizontal=True, label_visibility="collapsed")
-    spec = {"Soil carbon stock": ("soc_stock_tc_ha", "soil", 26, 36, "t C/ha, 0–30 cm"),
+    spec = {"Soil carbon stock": ("soc_stock_tc_ha", "soil", 26, 36, "t C/ha, 0 to 30 cm"),
             "Crop productivity (MOD17)": ("npp_flux_tc_ha_yr", "crop", 0, 2, "t C/ha/yr"),
             "Cropland share": ("cropland_frac", "crop", 0, 1, "share of cell")}[layer]
     url, b = raster(*spec[:4])
@@ -227,8 +257,11 @@ with tab_map:
         initial_view_state=view, map_provider="carto", map_style=pdk.map_styles.CARTO_LIGHT_NO_LABELS)
     st.pydeck_chart(deck, height=560)
     ramp = SOIL_RAMP if spec[1] == "soil" else CROP_RAMP
-    st.html(f'<div class="legend">{spec[2]:g}<i style="background:linear-gradient(90deg,{",".join(ramp)})"></i>'
-            f'{spec[3]:g} &nbsp; {spec[4]}</div>')
+    breaks = np.linspace(spec[2], spec[3], 5)
+    fmt = (lambda v: f"{v:.0%}") if spec[0] == "cropland_frac" else (lambda v: f"{v:g}")
+    st.html(f'<div class="legend"><div><i style="background:linear-gradient(90deg,{",".join(ramp)})"></i>'
+            f'<small>{"".join(f"<span>{fmt(round(v, 2))}</span>" for v in breaks)}</small></div>'
+            f'<span>{spec[4]}. Values outside the range take the end colour; blank cells have no data.</span></div>')
 
     st.subheader("Look up a place")
     towns = {"Ludhiana city": (30.901, 75.857), "Khanna": (30.705, 76.222), "Jagraon": (30.789, 75.473),
@@ -241,9 +274,9 @@ with tab_map:
     cell = nearest_cell(cells, lat, lon)
     soc = cell["soc_stock_tc_ha"]
     st.html(f"""<div class="facts">
-      <div class="fact"><b>{'—' if pd.isna(soc) else f'{soc:.1f} t/ha'}</b><span>soil carbon stock, 0–30 cm
+      <div class="fact"><b>{'No data' if pd.isna(soc) else f'{soc:.1f} t/ha'}</b><span>soil carbon stock, 0 to 30 cm
         {'(no soil data: built-up or water)' if pd.isna(soc) else ''}</span></div>
-      <div class="fact"><b>{'—' if pd.isna(cell['npp_flux_tc_ha_yr']) else f"{cell['npp_flux_tc_ha_yr']:.2f}"}</b><span>MOD17 net primary
+      <div class="fact"><b>{'No data' if pd.isna(cell['npp_flux_tc_ha_yr']) else f"{cell['npp_flux_tc_ha_yr']:.2f}"}</b><span>MOD17 net primary
         production, t C/ha/yr</span></div>
       <div class="fact"><b>{cell['cropland_frac']:.0%}</b><span>cropland (ESA WorldCover 2021) in cell {cell['cell_id']}</span></div>
     </div>""")
@@ -273,6 +306,10 @@ with tab_crop:
         "lower bound. MOD17 is not fit for crop carbon flux in this irrigated, double-cropped district.")
 
     st.subheader("Two growing seasons a year")
+    peak = ndvi.loc[ndvi["median_ndvi"].idxmax()]
+    st.html(f'<p class="quiet">Median greenness across the district rises twice: with rice in the monsoon and with wheat '
+            f'through winter, peaking at {peak["median_ndvi"]:.2f} in {peak["month"]}. Low points mark harvest and the '
+            f'residue-burning window.</p>')
     nd = ndvi.sort_values("sort_order")
     f2 = go.Figure(go.Scatter(x=nd["month"], y=nd["median_ndvi"], mode="lines+markers",
                               line=dict(color=CROP, width=2), marker=dict(size=8, color=CROP, line=dict(color=SILT, width=2)),
