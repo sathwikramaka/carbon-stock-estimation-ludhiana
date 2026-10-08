@@ -5,7 +5,6 @@ import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
 pytest.importorskip("streamlit")
-pytest.importorskip("pydeck")
 
 
 @pytest.mark.skipif(not (ROOT / "results" / "carbon_cells.parquet").exists(), reason="run 02_carbon_pipeline first")
