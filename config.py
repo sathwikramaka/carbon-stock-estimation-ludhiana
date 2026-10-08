@@ -303,3 +303,42 @@ def build_grid_v2(boundaries=(BOUNDARY_DEFAULT, BOUNDARY_CHECK)) -> pd.DataFrame
         out[f"in_{name}"] = (geod_area(shapely.intersection(boxes, g)) / out["cell_area_ha"]).clip(0, 1)
     out["in_district_frac"] = out[f"in_{boundaries[0]}"]
     return assert_unique(out)
+
+
+# ── Neighbourhood covariates for the models ───────────────────
+# SoilGrids and MOD17 are themselves predicted from covariates at coarser
+# support (MOD17 at 500 m; SoilGrids from 250 m-1 km layers), so a cell's
+# target depends on its surroundings as well as on the cell. Each covariate is
+# therefore also given as its mean over square windows of 3, 9, 21 and 41
+# cells (~0.7, 2, 5 and 9 km). Only covariates are smoothed, never a target.
+FOCAL_WINDOWS = (3, 9, 21, 41)
+
+
+def neighbourhood_means(df: pd.DataFrame, cols, windows=FOCAL_WINDOWS) -> pd.DataFrame:
+    """Mean of each column over k x k lattice windows around every cell (NaN-aware).
+
+    `df` needs grid_row and grid_col; returns columns '<col>_f<k>' aligned to df.index.
+    """
+    from scipy.ndimage import uniform_filter
+
+    r = (df["grid_row"] - df["grid_row"].min()).to_numpy()
+    c = (df["grid_col"] - df["grid_col"].min()).to_numpy()
+    shape = (r.max() + 1, c.max() + 1)
+    out = {}
+    for col in cols:
+        img = np.full(shape, np.nan)
+        img[r, c] = df[col].to_numpy(dtype=float)
+        ok = np.isfinite(img)
+        for k in windows:
+            num = uniform_filter(np.where(ok, img, 0.0), k, mode="constant")
+            den = uniform_filter(ok.astype(float), k, mode="constant")
+            with np.errstate(invalid="ignore", divide="ignore"):
+                out[f"{col}_f{k}"] = (num / den)[r, c]
+    return pd.DataFrame(out, index=df.index)
+
+
+def feature_family(name: str) -> str:
+    """Group a model feature with its neighbourhood means (for grouped importance)."""
+    if name in ("lon", "lat", "rot_ne", "rot_nw"):
+        return "coordinates"
+    return re.sub(r"_f\d+$", "", name)

@@ -59,29 +59,47 @@ gives it, and the yield-based figure is the better guide to crop carbon flux.
 
 All models are validated with **5-fold spatial block cross-validation** over an
 8 × 8 grid of geographic blocks, so that no test cell has a training neighbour,
-and compared with two baselines.
+and compared with gradient boosting and two baselines.
 
-| Model | Random Forest R² | Coordinates-only R² | Training-mean R² | RF RMSE |
-|---|---|---|---|---|
-| Above-ground (NPP, gC/m²/yr) | **0.401** | 0.346 | −0.019 | 46.2 |
-| Below-ground (SOC, t/ha) | **0.236** | 0.224 | −0.016 | 1.65 |
-| Below-ground + SoilGrids texture/BD layers | 0.304 | 0.224 | −0.016 | 1.58 |
+| Model | Random Forest R² | Gradient boosting R² | Coordinates-only R² | Training-mean R² | RF RMSE |
+|---|---|---|---|---|---|
+| Above-ground (NPP, gC/m²/yr) | **0.508** | 0.493 | 0.427 | −0.019 | 41.8 |
+| Below-ground (SOC, t/ha) | **0.441** | 0.431 | 0.319 | −0.016 | 1.41 |
+| Below-ground + SoilGrids texture/BD layers | 0.470 | 0.462 | 0.319 | −0.016 | 1.38 |
 
-Training sample: 20,000 cells with complete data. Predictors: elevation, slope,
-ESA WorldCover cropland/built-up/tree/water fractions and twelve monthly
-Sentinel-2 NDVI composites (June 2024 – May 2025). These predictors are
-independent of the targets, so the R² measures real predictive skill.
+Training sample: 20,000 cells with complete data. Predictors (124): elevation,
+slope, ESA WorldCover cropland/built-up/tree/water fractions, twelve monthly
+Sentinel-2 NDVI composites (June 2024 – May 2025) and six NDVI seasonal
+statistics — each also as its mean over 0.7, 2, 5 and 9 km neighbourhoods —
+plus coordinates. None is derived from the targets, so the R² measures real
+predictive skill.
 
-> **A note on the below-ground R².** SOC varies little across the district
-> (standard deviation 1.9 t/ha around 31 t/ha), and most of what varies is a
-> smooth regional gradient, which is why a coordinates-only model already
-> reaches 0.22. Adding SoilGrids' own texture and bulk-density layers raises R²
-> to 0.30, but those layers share the target's model, so that run measures
-> agreement within one product rather than independent skill. The district
-> totals do not depend on any model: every cell is observed directly.
+**What raised accuracy** (Random Forest, spatial CV):
 
-Top permutation importances: elevation (NPP 0.50, SOC 0.10) and January NDVI,
-the rabi wheat peak (SOC 0.26, NPP 0.07).
+| Feature set | NPP R² | SOC R² |
+|---|---|---|
+| Cell covariates only | 0.407 | 0.259 |
+| + NDVI seasonal statistics | 0.406 | 0.259 |
+| + neighbourhood means (0.7–9 km) | 0.501 | 0.435 |
+| + coordinates (final model) | **0.508** | **0.441** |
+
+Neighbourhood means matter because both targets are themselves gridded model
+outputs built at coarser support — MOD17 at 500 m with coarse meteorology,
+SoilGrids from 250 m–1 km covariates — so a cell's value depends on its
+surroundings as much as on the cell.
+
+> **A note on the R².** SOC varies little across the district (standard
+> deviation 1.9 t/ha around 31 t/ha), and much of what varies is a smooth
+> regional gradient, which a coordinates-only model already captures (0.32).
+> For NPP, coordinates are the most important feature group, reflecting the
+> coarse meteorology inside MOD17. Adding SoilGrids' own texture and
+> bulk-density layers raises SOC R² to 0.47, but those layers share the
+> target's model, so that run measures agreement within one product. The
+> district totals do not depend on any model: every cell is observed directly.
+
+Top permutation importances (per covariate, all scales): NPP — coordinates
+0.28, elevation 0.03, October NDVI 0.03; SOC — mean NDVI 0.08, coordinates
+0.07, November NDVI 0.05, elevation 0.04.
 
 ---
 
@@ -121,8 +139,9 @@ no biomass-to-carbon factor is applied. Cell areas are geodesic (WGS84).
 
 ### Modelling
 
-Random Forest regressors (300 trees, minimum leaf 5, random state 42) predict
-SOC stock and NPP from terrain, land cover and monthly NDVI. District totals
+Random Forest regressors (300 trees, minimum leaf 5, a third of features per
+split, random state 42) predict SOC stock and NPP from terrain, land cover and
+Sentinel-2 NDVI with multi-scale neighbourhood means and coordinates. District totals
 are a census of every cell; the models quantify how much of the spatial pattern
 the satellite covariates explain.
 
@@ -212,8 +231,8 @@ baseline so that position effects are visible.
 6. **Above-ground pool is a flux.** A standing above-ground biomass stock would
    need allometry, canopy height or a dedicated biomass product (GEDI, ESA CCI
    Biomass).
-7. **Model skill is moderate.** Satellite covariates explain 40% of NPP
-   variation and 24% of SOC variation under spatial validation.
+7. **Model skill is moderate.** Satellite covariates explain 51% of NPP
+   variation and 44% of SOC variation under spatial validation.
 8. **Not a carbon-credit quantity.** No baseline, additionality, permanence or
    field verification; for cropland soil carbon credits the relevant Verra
    methodology is VM0042, which requires soil sampling.
