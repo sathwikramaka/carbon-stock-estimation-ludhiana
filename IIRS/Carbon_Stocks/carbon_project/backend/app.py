@@ -78,9 +78,19 @@ def _cells():
     import pandas as pd
 
     p = RESULTS / "carbon_cells.csv"
-    if not p.exists():
+    if p.exists():
+        df = pd.read_csv(p)
+    elif (RESULTS / "carbon_cells.parquet").exists():
+        # The CSV is git-ignored; the committed parquet has the same cells without WKT,
+        # so rebuild each cell's square from its lattice indices.
+        df = pd.read_parquet(RESULTS / "carbon_cells.parquet")
+        step = 0.002245788210302635
+        x0, y0 = df["grid_col"] * step, df["grid_row"] * step
+        df["WKT"] = [f"MULTIPOLYGON ((({a!r} {b!r},{a!r} {d!r},{c!r} {d!r},{c!r} {b!r},{a!r} {b!r})))"
+                     for a, b, c, d in zip(x0.tolist(), y0.tolist(), (x0 + step).tolist(), (y0 + step).tolist())]
+    else:
         raise ResultsMissing(f"{p} not found — run IIRS/Scrpit/02_carbon_pipeline.ipynb")
-    return pd.read_csv(p).sort_values("cell_id", kind="stable").reset_index(drop=True)
+    return df.sort_values("cell_id", kind="stable").reset_index(drop=True)
 
 
 _RING = re.compile(r"\(\(\((.*?)\)\)\)")

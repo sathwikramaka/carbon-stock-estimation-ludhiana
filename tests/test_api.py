@@ -5,12 +5,12 @@ import shutil
 import pytest
 
 import config as C
-from conftest import load_app, needs_cells, needs_results
+from conftest import CELL_FILES, load_app, needs_cells, needs_results
 
 
 @pytest.fixture(scope="module")
 def client():
-    if not (C.RESULTS / "carbon_cells.csv").exists():
+    if not any(p.exists() for p in CELL_FILES):
         pytest.skip("run IIRS/Scrpit/02_carbon_pipeline.ipynb first")
     return load_app(C.RESULTS).app.test_client()
 
@@ -94,7 +94,10 @@ def test_empty_database_collection_is_labelled_fallback(tmp_path):
 @needs_cells
 def test_empty_cells_collection_falls_back_to_files(tmp_path):
     """MongoDB running but notebook 03 never run: the explorer must show the files, not 0 cells."""
-    shutil.copy(C.RESULTS / "carbon_cells.csv", tmp_path / "carbon_cells.csv")
+    for p in CELL_FILES:
+        if p.exists():
+            shutil.copy(p, tmp_path / p.name)
+            break
     mod = load_app(tmp_path, mode="local")
 
     class EmptyCells:
