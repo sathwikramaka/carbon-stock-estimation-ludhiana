@@ -17,7 +17,6 @@ import pandas as pd
 import plotly.graph_objects as go
 import pydeck as pdk
 import streamlit as st
-import streamlit.components.v1 as components
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -218,7 +217,8 @@ tab_stock, tab_map, tab_crop, tab_method, tab_data = st.tabs(
     ["Stock", "Map", "Crop productivity", "How it was made", "Download"])
 
 with tab_stock:
-    components.html(uncertainty_strip(), height=160)
+    st.iframe(uncertainty_strip(), height=160,                     # our own HTML, built from results/
+              alt=f"Census {STOCK:.1f} Mt inside SoilGrids' 90% range {LO:.1f} to {HI:.1f} Mt")
     st.html(f'<p class="quiet">Million tonnes of carbon in the top 30 cm. The census total is {STOCK:.1f} Mt; '
             f'SoilGrids\' own 90% prediction interval, summed with fully correlated errors, runs from {LO:.1f} to {HI:.1f} Mt.</p>')
     st.html(f"""<div class="facts">
@@ -233,7 +233,19 @@ with tab_stock:
         "in tonnes per hectare. Every earlier version multiplied it by bulk density and depth a second time, which "
         f"produced a plausible-looking {OLD:.1f} Mt. A fresh Earth Engine extraction matched the column to the stock "
         "layer exactly (r = 0.96, ratio 1.00).")
-    st.subheader("Why it may still be too high")
+    shc_path = RESULTS / "shc_validation.json"
+    shc = json.loads(shc_path.read_text()) if shc_path.exists() else None
+    st.subheader("Checked against soil tests" if shc else "Why it may still be too high")
+    if shc:
+        a_ = shc["all"]
+        imp = shc["implied_stock_mtc"]
+        st.markdown(
+            f"At {a_['samples']:,} Soil Health Card points in Ludhiana, lab organic carbon has a median of "
+            f"{a_['shc_oc_g_kg_median_corrected']:.1f} g/kg after the standard Walkley-Black correction, against "
+            f"{a_['soilgrids_soc_030_g_kg_median']:.1f} g/kg from SoilGrids at the same cells: SoilGrids is "
+            f"{a_['median_ratio_soilgrids_over_shc_corrected']:.2f} times higher. Scaling the census by that ratio gives "
+            f"about {imp['scaled_to_shc_corrected']:.1f} Mt, still an upper bound because the tests sample only the top 15 cm.")
+    st.markdown("**Earlier benchmark.**" if shc else "")
     st.markdown(
         "Soil-test records put Punjab's average topsoil organic carbon at 4.0 g/kg in 2005-06 (Benbi & Brar, 2009). "
         "SoilGrids implies about 6.9 g/kg here over a deeper layer, where carbon is normally lower. The comparison "
@@ -298,7 +310,7 @@ with tab_crop:
                       font=dict(family="Public Sans, sans-serif", color=INK), showlegend=False,
                       xaxis=dict(title="Million tonnes of carbon per year", gridcolor="#D3CEC1", zeroline=False),
                       yaxis=dict(autorange="reversed"))
-    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+    st.plotly_chart(fig, width="stretch", config={"displayModeBar": False})
     st.markdown(
         f"Carbon in harvested grain, straw and roots of Ludhiana's rice and wheat, from reported yields and IPCC "
         f"(2019) factors, is at least {crop['total_mtc_median']:.1f} Mt per year. MODIS MOD17, correctly scaled, "
@@ -322,7 +334,7 @@ with tab_crop:
                      font=dict(family="Public Sans, sans-serif", color=INK),
                      yaxis=dict(title="Median NDVI (Sentinel-2)", gridcolor="#D3CEC1", range=[0, 0.9]),
                      xaxis=dict(gridcolor=SILT))
-    st.plotly_chart(f2, use_container_width=True, config={"displayModeBar": False})
+    st.plotly_chart(f2, width="stretch", config={"displayModeBar": False})
 
 with tab_method:
     st.subheader("From satellite archive to district total")
@@ -354,16 +366,16 @@ with tab_data:
     st.markdown("Every figure on this site comes from these files, written by `notebooks/02_carbon_pipeline.ipynb`.")
     show = cells[["cell_id", "lat", "lon", "soc_stock_tc_ha", "soc_stock_tc", "npp_flux_tc_ha_yr",
                   "cropland_frac", "soil_status"]]
-    st.dataframe(show.head(200), use_container_width=True, hide_index=True,
+    st.dataframe(show.head(200), width="stretch", hide_index=True,
                  column_config={"soc_stock_tc_ha": st.column_config.NumberColumn("Soil C (t/ha)", format="%.1f"),
                                 "soc_stock_tc": st.column_config.NumberColumn("Soil C in cell (t)", format="%.0f"),
                                 "npp_flux_tc_ha_yr": st.column_config.NumberColumn("MOD17 NPP (t/ha/yr)", format="%.2f"),
                                 "cropland_frac": st.column_config.NumberColumn("Cropland share", format="%.2f")})
     c1, c2 = st.columns(2)
     c1.download_button("Download all cells (CSV)", show.to_csv(index=False).encode(), "ludhiana_carbon_cells.csv",
-                       "text/csv", use_container_width=True)
+                       "text/csv", width="stretch")
     c2.download_button("Download district summary (JSON)", json.dumps(summary, indent=2).encode(),
-                       "district_summary.json", "application/json", use_container_width=True)
+                       "district_summary.json", "application/json", width="stretch")
 
 st.html(f'<p class="quiet" style="margin-top:3rem">Made by Sathwik Ramaka for the M.Sc. Agriculture Analytics '
         f'programme of DAU, AAU and IIRS-ISRO. Data from ISRIC SoilGrids 2.0, NASA MODIS MOD17A3HGF, ESA WorldCover, '

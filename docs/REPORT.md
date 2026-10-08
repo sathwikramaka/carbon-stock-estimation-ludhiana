@@ -333,6 +333,7 @@ Importance is permutation importance on held-out folds (Strobl et al., 2007).
 | Document store | MongoDB | summary, metrics, NDVI, per-cell table |
 | API | Flask | summary, metrics, NDVI, GeoJSON by sample or bounding box, paged cells |
 | Frontend | Leaflet, Chart.js | home, map, analytics, model, explorer |
+| Public app | Streamlit, pydeck, Plotly, Motion | `app/streamlit_app.py`, deployed on Streamlit Community Cloud |
 
 ### 5.7 Re-extraction (v2 census)
 
@@ -523,9 +524,13 @@ result — little skill beyond position — is informative in its own right.
 The re-extraction (Section 5.7) has been run and its census is the headline.
 In order of value:
 
-1. Validate SoilGrids locally against Soil Health Card or other soil-test
-   data. With a 90% interval of 2.2–27.7 MtC, this is the only step that can
-   make the stock useful for decisions.
+1. Validate SoilGrids locally against Soil Health Card data.
+   `06_shc_validation.ipynb` is ready: it places each geotagged sample on the
+   250 m lattice, applies the Walkley–Black correction (× 1.32), compares with
+   SoilGrids at the same cells and scales the census by the median ratio. It
+   awaits the Punjab Soil Health Card table (Dataful, sign-in required). With a
+   90% interval of 2.2–27.7 MtC, this is the step that can make the stock
+   useful for decisions.
 2. Use those samples to fit a local error model (or a regression-kriging
    correction of SoilGrids), which would also show which of the two stock
    routes is closer.
