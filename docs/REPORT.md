@@ -89,7 +89,7 @@ case study in that risk.
 | Paddy 2024 | 256,600 ha at 7,014 kg/ha |
 | Wheat 2023-24 | 245,200 ha at about 5,000 kg/ha (in-season figure) |
 
-![Location of Ludhiana District and coverage of the v1 grid](results/fig_location.png)
+![Location of Ludhiana District and coverage of the v1 grid](../results/fig_location.png)
 
 *Figure 1.* Left: Ludhiana among Punjab's districts. Right: the two district
 boundaries used in v2 against the v1 export grid, which covers 93.0% of the
@@ -386,7 +386,7 @@ far a naive sum would understate the uncertainty. The v1 sampling interval
 (±0.01 MtC) measures only how well 20,000 cells represent 66,700 and should
 not be read as the uncertainty of the stock either.
 
-![SoilGrids uncertainty](results/fig_soilgrids_uncertainty.png)
+![SoilGrids uncertainty](../results/fig_soilgrids_uncertainty.png)
 
 ### 6.2 Net primary production
 

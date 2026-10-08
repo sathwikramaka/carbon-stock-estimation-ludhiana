@@ -9,10 +9,15 @@ __pycache__/
 results/carbon_cells.csv
 
 # Earth Engine downloads (large; reproducible from notebooks/00_gee_extraction.ipynb)
-IIRS/Carbon_Stocks/v2/*.csv
+data/v2/*.csv
 
 # Local-only backups made during the rebuild
 archive/pre_rebuild_snapshot/
 
 # Earth Engine per-chunk cache (resumable extraction)
-IIRS/Carbon_Stocks/v2/chunks/
+data/v2/chunks/
+
+# OS clutter
+.DS_Store
+Thumbs.db
+desktop.ini

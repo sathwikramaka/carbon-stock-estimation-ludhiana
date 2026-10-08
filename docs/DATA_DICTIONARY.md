@@ -5,7 +5,7 @@ never committed — AUDIT.md F10). v2 columns are produced by
 `notebooks/00_gee_extraction.ipynb`, whose manifest records every asset and
 parameter.
 
-## v1 raw exports (`IIRS/Carbon_Stocks/`)
+## v1 raw exports (`data/raw/`)
 
 | File | Rows | Key | Notes |
 |---|---|---|---|
@@ -32,7 +32,7 @@ parameter.
 | `Kharif_Lud` (`NDWI_Khari` in AGD), `NDWI_Rabi_` | index | NDWI | |
 | `NDVI_Jun24` … `NDVI_May25` | NDVI | monthly composite, sensor unrecorded | Aug 2024: 48% of rows missing in the file; 52% of grid cells lack a usable value once unattributable IDs are excluded |
 
-## Boundaries (`IIRS/Carbon_Stocks/boundaries/`)
+## Boundaries (`data/boundaries/`)
 
 | File | Source | Licence | Area |
 |---|---|---|---|
@@ -43,7 +43,7 @@ parameter.
 
 Both simplified at 0.0001° (~10 m); area change < 0.001%. Census 2011 reports 376,700 ha.
 
-## v2 (`IIRS/Carbon_Stocks/v2/ludhiana_cells_v2.csv.gz`)
+## v2 (`data/v2/ludhiana_cells_v2.csv.gz`)
 
 | Column | Unit | Source |
 |---|---|---|

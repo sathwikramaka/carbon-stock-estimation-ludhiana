@@ -16,7 +16,9 @@ import numpy as np
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parent
-DATA = ROOT / "IIRS" / "Carbon_Stocks"
+DATA = ROOT / "data"
+RAW = DATA / "raw"              # v1 Earth Engine exports, as received
+DASHBOARD = ROOT / "dashboard"
 RESULTS = ROOT / "results"
 
 RANDOM_STATE = 42
@@ -170,7 +172,7 @@ def assert_unique(df: pd.DataFrame, key: str = "cell_id") -> pd.DataFrame:
 
 
 # ── Loaders ───────────────────────────────────────────────────
-def load_grid(data: Path = DATA) -> pd.DataFrame:
+def load_grid(data: Path = RAW) -> pd.DataFrame:
     """All 66,700 grid cells with key, centroid, area, soil QC and covariates.
 
     BGD and AGD exports are row-aligned (identical WKT order, verified in
@@ -195,7 +197,7 @@ def load_grid(data: Path = DATA) -> pd.DataFrame:
     return assert_unique(g)
 
 
-def load_samples(data: Path = DATA) -> pd.DataFrame:
+def load_samples(data: Path = RAW) -> pd.DataFrame:
     """The 20,000-cell random sample: SoilGrids ocs 0-30 cm (t/ha, diluted) and raw MOD17 NPP DN.
 
     Below- and above-ground sample files are row-aligned. No row is dropped:
@@ -214,7 +216,7 @@ def load_samples(data: Path = DATA) -> pd.DataFrame:
     return assert_unique(s)
 
 
-def load_ndvi(grid: pd.DataFrame, data: Path = DATA) -> pd.DataFrame:
+def load_ndvi(grid: pd.DataFrame, data: Path = RAW) -> pd.DataFrame:
     """Monthly NDVI attached by Grid_ID only where that ID is unique in the grid.
 
     The NDVI export has no geometry, so cells whose Grid_ID collides with
@@ -267,7 +269,7 @@ BOUNDARY_CHECK = "ludhiana_census2011_datameet"       # Census 2011 polygon, sen
 
 
 def load_boundary(name: str = BOUNDARY_DEFAULT):
-    """Shapely geometry of a district boundary stored in IIRS/Carbon_Stocks/boundaries/."""
+    """Shapely geometry of a district boundary stored in data/boundaries/."""
     import json
     from shapely.geometry import shape
     gj = json.loads((BOUNDARIES / f"{name}.geojson").read_text())

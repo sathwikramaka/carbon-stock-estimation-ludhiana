@@ -178,7 +178,7 @@ The grid sums to 356,894 ha, 94.7% of the Census 2011 area (376,700 ha). Earlier
 documents cited 403,406 ha (6.25 ha × 64,545) and 345,364 ha (after F8); both are
 wrong.
 
-Two open boundaries are now in `IIRS/Carbon_Stocks/boundaries/`: geoBoundaries
+Two open boundaries are now in `data/boundaries/`: geoBoundaries
 gbOpen ADM2 (369,961 ha; default) and Datameet Census 2011 (358,482 ha;
 sensitivity). Against them the v1 grid covers only 93.0% and 96.2% of the
 district, and 1,563 of its cells (11,971–12,706 ha) lie outside both. **v2
