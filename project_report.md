@@ -3,7 +3,7 @@
 ### A Grid-Based Machine Learning Approach Using Satellite and Gridded Soil Data
 
 **Big Data Analytics — Project Report**
-Sathwik Ramaka · M.Sc. Agriculture Analytics
+Team: Sathwik Ramaka, Kadiri Yaswanthi, Himanshu Bhanja, Swathi A Patil · M.Sc. Agriculture Analytics
 Indian Institute of Remote Sensing (IIRS), Dehradun
 
 Live dashboard: <https://carbon-stock-estimation-ludhiana.streamlit.app/>
@@ -702,7 +702,7 @@ writes every published number to `IIRS/Carbon_Stocks/results/`;
 (`district_summary`, `model_metrics`, `ndvi_monthly`, `cells`), verifies that
 the database totals match the files, and demonstrates spatial queries
 (bounding-box retrieval with `ST_MakeEnvelope`, spatial joins) and MongoDB
-aggregations. On the author's machine (PostgreSQL 16 with PostGIS, MongoDB
+aggregations. On a team member's machine (PostgreSQL 16 with PostGIS, MongoDB
 Community Server) both stores reproduce the published totals exactly — soil
 10.5371 MtC and NPP 0.3353 MtC/yr — and the local dashboard serves the map
 from PostGIS (`DB_MODE=local`; the map footer reads `data: local`). An

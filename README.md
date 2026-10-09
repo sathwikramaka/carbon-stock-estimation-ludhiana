@@ -120,10 +120,15 @@ The map footer shows where data came from (`data: local` or `data: files-fallbac
 
 The soil figure is a SoilGrids estimate, not checked against field samples here (the Soil Health Card table is a paid download; the notebook is ready for it). MODIS NPP misses most crop productivity in this irrigated landscape. Details in the [report](project_report.md#7-limitations).
 
-## 👤 Author
+## 👥 Team
 
-**Sathwik Ramaka** — M.Sc. Agriculture Analytics (DAU · AAU · IIRS-ISRO)
-Big Data Analytics project, Indian Institute of Remote Sensing, Dehradun
-[LinkedIn](https://www.linkedin.com/in/sathwikramaka/) · [GitHub](https://github.com/sathwikramaka)
+Group project, Big Data Analytics, Indian Institute of Remote Sensing (IIRS-ISRO), Dehradun · M.Sc. Agriculture Analytics (DAU · AAU · IIRS-ISRO)
+
+| Member | Links |
+|---|---|
+| **Sathwik Ramaka** — ran the models, produced the results, built the dashboard | [LinkedIn](https://www.linkedin.com/in/sathwikramaka/) · [GitHub](https://github.com/sathwikramaka) |
+| **Kadiri Yaswanthi** | [LinkedIn](https://www.linkedin.com/in/kadiri-yaswanthi-9a632b204/) |
+| **Himanshu Bhanja** | [LinkedIn](https://www.linkedin.com/in/himanshu-bhanja-70362a2bb/) |
+| **Swathi A Patil** | [LinkedIn](https://www.linkedin.com/in/swathi-a-patil-69462b3b1/) |
 
 <sub>MIT licence</sub>
