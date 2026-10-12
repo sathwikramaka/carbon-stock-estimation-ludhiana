@@ -127,7 +127,7 @@ Group project, Big Data Analytics, Indian Institute of Remote Sensing (IIRS-ISRO
 | Member | Links |
 |---|---|
 | **Sathwik Ramaka** — ran the models, produced the results, built the dashboard | [LinkedIn](https://www.linkedin.com/in/sathwikramaka/) · [GitHub](https://github.com/sathwikramaka) |
-| **Kadiri Yaswanthi** | [LinkedIn](https://www.linkedin.com/in/kadiri-yaswanthi-9a632b204/) |
+| **Kadiri Yaswanthi** | [LinkedIn](https://www.linkedin.com/in/kadiri-yaswanthi-9a632b204/)· [GitHub](https://github.com/YASWANTHI2410) |
 | **Himanshu Bhanja** | [LinkedIn](https://www.linkedin.com/in/himanshu-bhanja-70362a2bb/) |
 | **Swathi A Patil** | [LinkedIn](https://www.linkedin.com/in/swathi-a-patil-69462b3b1/) |
 
